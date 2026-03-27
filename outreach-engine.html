@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Application Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --bg-surface: #141414;
+  --bg-elevated: #1c1c1c;
+  --border: #252525;
+  --border-bright: #333;
+  --accent: #00ff41;
+  --accent-dim: #00cc33;
+  --accent-muted: rgba(0,255,65,0.10);
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --text-faint: #444;
+  --danger: #ff4444;
+  --warn: #ffbb33;
+  --info: #4499ff;
+  --success: #00ff41;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --sidebar-w: 210px;
+  --radius: 3px;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 4px;
+}
+.nav-list { list-style: none; padding: 8px 0; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+  line-height: 1.3;
+}
+.nav-item:hover { color: var(--text); background: var(--bg-elevated); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-muted); }
+.nav-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+/* ── MAIN CONTENT ── */
+#main-content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+.tab-section { display: none; }
+.tab-section.active { display: block; }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.section-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: var(--text-dim);
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.btn-primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); color: #000; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #000; }
+.btn-sm { padding: 4px 10px; font-size: 10px; }
+.btn-xs {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+.btn-del {
+  padding: 2px 7px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-faint);
+  line-height: 1;
+  transition: all 0.15s;
+}
+.btn-del:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.toolbar-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: 1; }
+.toolbar-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* ── FORM CONTROLS ── */
+input[type=text], input[type=date], input[type=password], input[type=url], input[type=email], select, textarea {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+input[type=text]:focus, input[type=date]:focus, input[type=password]:focus,
+input[type=url]:focus, input[type=email]:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+textarea { resize: vertical; min-height: 80px; }
+.filter-input { width: 180px; flex-shrink: 0; }
+.filter-select { width: 140px; flex-shrink: 0; }
+
+/* ── TABLES ── */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  -webkit-overflow-scrolling: touch;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+thead { position: sticky; top: 0; z-index: 2; }
+th {
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  padding: 9px 12px;
+  text-align: left;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-bright);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+th:hover { color: var(--accent); }
+th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+th.no-sort { cursor: default; }
+th.no-sort:hover { color: var(--text-dim); }
+td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+td[contenteditable] { cursor: text; outline: none; }
+td[contenteditable]:hover { background: rgba(255,255,255,0.03); }
+td[contenteditable]:focus {
+  background: var(--bg-elevated);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  max-width: none;
+  overflow: visible;
+  white-space: pre-wrap;
+  min-width: 120px;
+}
+td.td-actions { width: 50px; max-width: 50px; text-align: center; }
+td.td-check { width: 34px; max-width: 34px; text-align: center; }
+td.td-wide { max-width: 300px; }
+td.td-notes { max-width: 160px; white-space: normal; word-break: break-word; font-size: 10.5px; color: var(--text-dim); }
+td .stage-select, td .inline-select {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 0;
+  cursor: pointer;
+  width: auto;
+  background-image: none;
+}
+td .stage-select:focus, td .inline-select:focus { outline: none; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.015); }
+
+/* row stage colors */
+tr.row-offer td { background: rgba(0,255,65,0.05) !important; }
+tr.row-phone td { background: rgba(255,187,51,0.05) !important; }
+tr.row-technical td { background: rgba(68,153,255,0.05) !important; }
+tr.row-rejected td { background: rgba(255,68,68,0.05) !important; }
+tr.row-responded-yes td { background: rgba(0,255,65,0.05) !important; }
+tr.row-responded-no td { background: rgba(255,68,68,0.05) !important; }
+tr.row-pending td { background: rgba(255,187,51,0.04) !important; }
+tr.row-offer:hover td, tr.row-phone:hover td, tr.row-technical:hover td,
+tr.row-rejected:hover td, tr.row-responded-yes:hover td,
+tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.2); }
+
+.alert-dot {
+  color: var(--danger);
+  font-size: 8px;
+  vertical-align: middle;
+  margin-left: 4px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.row-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.row-count span { color: var(--accent); }
+
+/* ── STAGE BADGES ── */
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.badge-applied { background: rgba(68,153,255,0.15); color: #4499ff; border: 1px solid rgba(68,153,255,0.3); }
+.badge-phone { background: rgba(255,187,51,0.15); color: #ffbb33; border: 1px solid rgba(255,187,51,0.3); }
+.badge-technical { background: rgba(150,100,255,0.15); color: #aa77ff; border: 1px solid rgba(150,100,255,0.3); }
+.badge-offer { background: rgba(0,255,65,0.15); color: #00ff41; border: 1px solid rgba(0,255,65,0.3); }
+.badge-rejected { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
+.badge-ghosted { background: rgba(100,100,100,0.15); color: #888; border: 1px solid rgba(100,100,100,0.3); }
+.badge-withdrawn { background: rgba(100,100,100,0.10); color: #666; border: 1px solid rgba(100,100,100,0.2); }
+.badge-yes { background: rgba(0,255,65,0.15); color: #00ff41; border: 1px solid rgba(0,255,65,0.3); }
+.badge-no { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
+.badge-pending { background: rgba(255,187,51,0.15); color: #ffbb33; border: 1px solid rgba(255,187,51,0.3); }
+
+/* ── STAT CARDS ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.stat-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.stat-value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+/* ── CHECKLIST ── */
+.checklist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.checklist-item:hover { border-color: var(--border-bright); color: var(--text); }
+.checklist-item.done { color: var(--accent); border-color: rgba(0,255,65,0.3); background: var(--accent-muted); text-decoration: line-through; }
+.checklist-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+
+/* ── TEMPLATE CARDS ── */
+.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.template-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.template-card:hover { border-color: var(--border-bright); }
+.template-name { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text); }
+.template-category { font-family: var(--font-mono); font-size: 10px; color: var(--accent); border: 1px solid rgba(0,255,65,0.3); border-radius: 2px; padding: 1px 6px; display: inline-block; }
+.template-preview { font-size: 11px; color: var(--text-dim); line-height: 1.5; flex: 1; white-space: pre-wrap; word-break: break-word; max-height: 80px; overflow: hidden; }
+.template-actions { display: flex; gap: 6px; padding-top: 4px; border-top: 1px solid var(--border); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal-dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-title { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  transition: color 0.15s;
+}
+.modal-close:hover { color: var(--danger); }
+.modal-body { padding: 18px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── FORM ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row { display: flex; flex-direction: column; gap: 4px; }
+.form-row.full { grid-column: 1 / -1; }
+.form-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.stats-bar span { color: var(--accent); font-weight: 700; }
+
+/* ── METRICS ── */
+.metrics-big-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.metric-big {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+.metric-big-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.metric-big-value { font-family: var(--font-mono); font-size: 48px; font-weight: 700; color: var(--accent); line-height: 1; }
+.metric-big-value.danger { color: var(--danger); }
+.charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.chart-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.chart-title { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.chart-card canvas { max-height: 180px; }
+
+/* ── TAILOR ── */
+.tailor-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.tailor-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.tailor-panel textarea { min-height: 220px; font-family: var(--font-mono); font-size: 12px; }
+.ats-score-block { text-align: center; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 12px; }
+.ats-score-num { font-family: var(--font-mono); font-size: 56px; font-weight: 700; line-height: 1; }
+.ats-score-num.red { color: var(--danger); }
+.ats-score-num.yellow { color: var(--warn); }
+.ats-score-num.green { color: var(--accent); }
+.ats-score-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.result-section { margin-bottom: 16px; }
+.result-section-title { font-family: var(--font-mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.chips-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.matches-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.match-item { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); padding: 6px 10px; background: var(--accent-muted); border-left: 2px solid var(--accent); border-radius: 0 2px 2px 0; line-height: 1.5; }
+.rewrite-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; }
+.rewrite-original { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); text-decoration: line-through; margin-bottom: 8px; line-height: 1.5; }
+.rewrite-new { font-family: var(--font-mono); font-size: 11px; color: var(--text); line-height: 1.5; margin-bottom: 8px; }
+.cover-note-text { font-family: var(--font-mono); font-size: 12px; color: var(--text); line-height: 1.7; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 8px; white-space: pre-wrap; }
+.error-msg { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); border-radius: var(--radius); padding: 10px 14px; font-family: var(--font-mono); font-size: 11px; color: var(--danger); display: none; }
+.error-msg.visible { display: block; }
+.tailor-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+
+/* ── FOLLOW-UP LIST ── */
+.followup-list { display: flex; flex-direction: column; gap: 6px; }
+.followup-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,68,68,0.06); border: 1px solid rgba(255,68,68,0.2); border-radius: var(--radius); padding: 8px 14px; font-family: var(--font-mono); font-size: 11px; }
+.followup-company { color: var(--text); font-weight: 700; }
+.followup-role { color: var(--text-dim); }
+.followup-date { color: var(--danger); font-size: 10px; }
+.empty-state { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); padding: 12px 0; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── HAMBURGER ── */
+#hamburger {
+  display: none;
+  position: fixed;
+  top: 14px; left: 14px;
+  z-index: 200;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 16px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+#sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+}
+
+/* ── URL LINK ── */
+.url-link { color: var(--info); text-decoration: none; font-size: 11px; }
+.url-link:hover { text-decoration: underline; }
+.td-url { max-width: 140px; }
+.open-link-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--info); font-size: 11px; padding: 0 4px;
+  font-family: var(--font-mono);
+  transition: color 0.15s;
+}
+.open-link-btn:hover { color: var(--accent); }
+
+/* ── MSG TRUNCATED ── */
+.msg-truncated { color: var(--text-dim); font-size: 11px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
+.expand-btn { background: none; border: none; cursor: pointer; color: var(--text-faint); font-family: var(--font-mono); font-size: 11px; padding: 0; margin-left: 4px; transition: color 0.15s; }
+.expand-btn:hover { color: var(--accent); }
+
+/* ── SIMPLE TABLE (companies/certs/schedule) ── */
+.simple-table { width: 100%; }
+
+/* ── CARD CONTENT ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.panel-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+/* ── MOBILE ── */
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .tailor-layout { grid-template-columns: 1fr; }
+  .metrics-big-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  #hamburger { display: block; }
+  #sidebar { transform: translateX(-100%); transition: transform 0.25s; }
+  body.sidebar-open #sidebar { transform: translateX(0); }
+  body.sidebar-open #sidebar-overlay { display: block; }
+  #main-content { margin-left: 0; padding: 16px; padding-top: 56px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .checklist-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="sidebar-overlay"></div>
+<button id="hamburger">☰</button>
+
+<nav id="sidebar">
+  <div class="sidebar-logo">JAE</div>
+  <ul class="nav-list">
+    <li class="nav-item active" data-tab="dashboard">◉ Dashboard</li>
+    <li class="nav-item" data-tab="templates">◧ Outreach Templates</li>
+    <li class="nav-item" data-tab="tracker">◈ App Tracker</li>
+    <li class="nav-item" data-tab="companies">◫ Target Companies</li>
+    <li class="nav-item" data-tab="certs">◎ Cert Plan</li>
+    <li class="nav-item" data-tab="schedule">◷ Daily Schedule</li>
+    <div class="nav-divider"></div>
+    <li class="nav-item" data-tab="outreach">◉ Outreach Tracker</li>
+    <li class="nav-item" data-tab="metrics">◌ Metrics</li>
+    <li class="nav-item" data-tab="tailor">◑ Tailor Resume</li>
+  </ul>
+</nav>
+
+<main id="main-content">
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<section id="tab-dashboard" class="tab-section active">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Dashboard</div>
+      <div class="section-sub" id="dash-date"></div>
+    </div>
+  </div>
+  <div class="stats-grid" id="dash-stats">
+    <div class="stat-card"><div class="stat-label">Total Applications</div><div class="stat-value" id="stat-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">Response Rate</div><div class="stat-value" id="stat-rate">0%</div></div>
+    <div class="stat-card"><div class="stat-label">Active Outreach</div><div class="stat-value" id="stat-outreach">0</div></div>
+    <div class="stat-card"><div class="stat-label">Follow-ups Due</div><div class="stat-value" id="stat-followups">0</div></div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="panel-title">Follow-ups Due Today</div>
+      <div class="followup-list" id="followup-list"><div class="empty-state">No follow-ups due.</div></div>
+    </div>
+    <div>
+      <div class="panel-title">Daily Checklist</div>
+      <div class="checklist-grid" id="daily-checklist"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TEMPLATES ═══════════════ -->
+<section id="tab-templates" class="tab-section">
+  <div class="section-header">
+    <div class="section-title">Outreach Templates</div>
+    <button class="btn btn-primary btn-sm" onclick="openTemplateModal()">+ Add Template</button>
+  </div>
+  <div class="templates-grid" id="templates-grid"></div>
+</section>
+
+<!-- ═══════════════ TRACKER ═══════════════ -->
+<section id="tab-tracker" class="tab-section">
+  <div class="section-header">
+    <div class="section-title">Application Tracker</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm" id="app-export-csv">Export CSV</button>
+      <button class="btn btn-primary btn-sm" onclick="openAddAppModal()">+ Add</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input type="text" class="filter-input" id="app-search" placeholder="Search company / role…">
+      <select class="filter-select" id="app-stage-filter">
+        <option value="">All Stages</option>
+        <option>Applied</option><option>Phone Screen</option><option>Technical</option>
+        <option>Offer</option><option>Rejected</option><option>Ghosted</option><option>Withdrawn</option>
+      </select>
+      <select class="filter-select" id="app-source-filter">
+        <option value="">All Sources</option>
+        <option>LinkedIn</option><option>Indeed</option><option>Referral</option>
+        <option>Company Site</option><option>Wellfound</option><option>Other</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <select id="app-bulk-stage" class="filter-select" style="width:130px;">
+        <option value="">Bulk Stage…</option>
+        <option>Applied</option><option>Phone Screen</option><option>Technical</option>
+        <option>Offer</option><option>Rejected</option><option>Ghosted</option><option>Withdrawn</option>
+      </select>
+      <button class="btn btn-sm" id="app-bulk-apply" disabled>Apply</button>
+      <button class="btn btn-danger btn-sm" id="app-bulk-delete" disabled>Delete</button>
+    </div>
+  </div>
+  <div class="row-count" id="app-row-count"></div>
+  <div class="table-wrapper">
+    <table id="app-table">
+      <thead>
+        <tr>
+          <th class="no-sort td-check"><input type="checkbox" id="app-select-all"></th>
+          <th data-col="dateApplied">Date</th>
+          <th data-col="company">Company</th>
+          <th data-col="role">Role</th>
+          <th data-col="source">Source</th>
+          <th data-col="stage">Stage</th>
+          <th data-col="contactName">Contact</th>
+          <th class="no-sort">LinkedIn</th>
+          <th class="no-sort">Job URL</th>
+          <th data-col="followupDate">Follow-up</th>
+          <th data-col="notes" class="no-sort">Notes</th>
+          <th class="no-sort td-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="app-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ COMPANIES ═══════════════ -->
+<section id="tab-companies" class="tab-section">
+  <div class="section-header">
+    <div class="section-title">Target Companies</div>
+    <button class="btn btn-primary btn-sm" onclick="openCompanyModal()">+ Add Company</button>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th>Company</th><th>Website</th><th>Industry</th><th>Status</th><th>Notes</th><th class="no-sort td-actions"></th>
+      </tr></thead>
+      <tbody id="companies-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ CERTS ═══════════════ -->
+<section id="tab-certs" class="tab-section">
+  <div class="section-header">
+    <div class="section-title">Cert Plan</div>
+    <button class="btn btn-primary btn-sm" onclick="openCertModal()">+ Add Cert</button>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th>Certification</th><th>Provider</th><th>Target Date</th><th>Status</th><th>Notes</th><th class="no-sort td-actions"></th>
+      </tr></thead>
+      <tbody id="certs-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ SCHEDULE ═══════════════ -->
+<section id="tab-schedule" class="tab-section">
+  <div class="section-header">
+    <div class="section-title">Daily Schedule</div>
+    <button class="btn btn-primary btn-sm" onclick="openScheduleModal()">+ Add Block</button>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr>
+        <th>Time</th><th>Activity</th><th>Duration (min)</th><th>Notes</th><th class="no-sort td-actions"></th>
+      </tr></thead>
+      <tbody id="schedule-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ OUTREACH TRACKER ═══════════════ -->
+<section id="tab-outreach" class="tab-section">
+  <div class="section-header">
+    <div class="section-title">Outreach Tracker</div>
+    <button class="btn btn-primary btn-sm" onclick="openAddOutreachModal()">+ Log Outreach</button>
+  </div>
+  <div class="stats-bar" id="outreach-stats-bar">Loading…</div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <select class="filter-select" id="out-response-filter">
+        <option value="">All Responses</option>
+        <option>Pending</option><option>Yes</option><option>No</option>
+      </select>
+      <select class="filter-select" id="out-template-filter">
+        <option value="">All Templates</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrapper">
+    <table id="out-table">
+      <thead>
+        <tr>
+          <th data-col="date" data-tracker="out">Date</th>
+          <th data-col="name" data-tracker="out">Name</th>
+          <th data-col="company" data-tracker="out">Company</th>
+          <th data-col="role" data-tracker="out">Their Role</th>
+          <th data-col="templateUsed" data-tracker="out">Template</th>
+          <th class="no-sort">Message</th>
+          <th data-col="response" data-tracker="out">Response</th>
+          <th data-col="responseDate" data-tracker="out">Resp. Date</th>
+          <th data-col="nextAction" data-tracker="out">Next Action</th>
+          <th class="no-sort">Notes</th>
+          <th class="no-sort td-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="out-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ METRICS ═══════════════ -->
+<section id="tab-metrics" class="tab-section">
+  <div class="section-header"><div class="section-title">Metrics</div></div>
+  <div class="metrics-big-grid">
+    <div class="metric-big">
+      <div class="metric-big-label">Days Since Last Application</div>
+      <div class="metric-big-value" id="metric-days-app">—</div>
+    </div>
+    <div class="metric-big">
+      <div class="metric-big-label">Days Since Last Outreach</div>
+      <div class="metric-big-value" id="metric-days-out">—</div>
+    </div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Weekly Applications (last 8 weeks)</div><canvas id="chart-weekly-apps"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Weekly Outreach Sent (last 8 weeks)</div><canvas id="chart-weekly-out"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Response Rate Over Time (%)</div><canvas id="chart-resp-rate"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Stage Funnel</div><canvas id="chart-funnel"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Source Breakdown</div><canvas id="chart-source"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Template Response Rate (%)</div><canvas id="chart-template"></canvas></div>
+  </div>
+</section>
+
+<!-- ═══════════════ TAILOR RESUME ═══════════════ -->
+<section id="tab-tailor" class="tab-section">
+  <div class="section-header"><div class="section-title">Tailor Resume</div></div>
+  <div class="tailor-layout">
+    <div class="tailor-panel">
+      <div>
+        <div class="form-label" style="margin-bottom:4px;">Anthropic API Key</div>
+        <input type="password" id="tailor-api-key" placeholder="sk-ant-api03-…">
+        <div class="tailor-hint" style="margin-top:4px;">Key stored in localStorage. Never sent anywhere except Anthropic.</div>
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:4px;">Job Description</div>
+        <textarea id="tailor-jd" placeholder="Paste the full job description here…"></textarea>
+      </div>
+      <button class="btn btn-primary" id="tailor-btn" onclick="analyzeJD()">Analyze JD</button>
+      <div class="error-msg" id="tailor-error"></div>
+    </div>
+    <div class="tailor-panel" id="tailor-results" style="display:none;">
+      <div class="ats-score-block">
+        <div class="ats-score-num" id="ats-score-num">—</div>
+        <div class="ats-score-label">ATS Match Score / 100</div>
+      </div>
+      <div class="result-section">
+        <div class="result-section-title">Missing Keywords</div>
+        <div class="chips-list" id="result-missing"></div>
+      </div>
+      <div class="result-section">
+        <div class="result-section-title">Strong Matches</div>
+        <ul class="matches-list" id="result-matches"></ul>
+      </div>
+      <div class="result-section">
+        <div class="result-section-title">Suggested Rewrites</div>
+        <div id="result-rewrites"></div>
+      </div>
+      <div class="result-section">
+        <div class="result-section-title">Wellfound Cover Note</div>
+        <div class="cover-note-text" id="result-cover"></div>
+        <button class="btn btn-sm" id="copy-cover-btn">Copy Cover Note</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main><!-- end main-content -->
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════
+const RESUME_CONST = `
+EDUCATION
+- MS Computer Science, UT Dallas (Aug 2026)
+- BS Computer Science + Mathematics, Austin College (May 2025, GPA 3.5)
+
+SKILLS
+Languages: TypeScript, Python, C#, Java, SQL
+Frameworks: React Native, Next.js, ASP.NET Core, FastAPI, Flask, Expo
+Databases: PostgreSQL, Supabase, SQLite
+AI/ML: scikit-learn, Prophet, OpenAI API, IBM watsonx
+Tools: Docker, Git, CI/CD, Clerk, Stripe
+
+PROJECTS
+Buzzr — Letterboxd-style sports platform, live on TestFlight, 20 weekly active users, 100% week-1 retention, 8 leagues, 10,838 live games. Two-tier ML entertainment scoring system (Python scikit-learn + TypeScript fallback) scoring 58 March Madness matchups. Building collaborative filtering recommendation engine.
+
+Credit Union Ledger API — ASP.NET Core layered REST API, idempotent transactions, balance enforcement, audit logging, 100% rollback coverage, 10 integration tests across 7 endpoints, Dockerized with environment-specific config.
+
+Business Analytics Dashboard — FastAPI + React 19 + TypeScript, 15+ endpoints, 7 backend services, 800+ row ETL pipeline, CSV-to-forecast in 1.5 seconds, Prophet 7/30/90-day forecasting with 95% confidence intervals, Isolation Forest anomaly detection, OpenAI API insights.
+
+IBM Medscribe AI — React + Flask + IBM watsonx clinical workflow, physician notes to structured summaries, 50% manual review time reduction, 100+ clinical documents processed.
+
+EXPERIENCE
+Seam.ai (Internship) — Next.js SaaS dashboard, Clerk auth, Stripe payments, Supabase JWT bridge. Python LLM pipelines with Llama 3.1 70B via DeepInfra, 3 chained extraction stages, JSON schema enforcement, two-stage repair fallback. Chrome MV3 extension, service workers, webRequest API, 8,000 generated filter combinations, O(1) Set deduplication.
+
+Aeyesafe (Internship) — IoT sensor validation for senior safety platform, thermal/radar/sleep sensors, end-to-end data flow verification, X5 gateway/PZ10 device configurations, failure mode documentation, debugging runbooks.
+
+Teaching Assistant — Designed and graded final lab project, office hours, one-on-one debugging sessions.
+
+CS & Robotics Club President — Led club, organized technical workshops and coding events.
+`.trim();
+
+const STAGES = ['Applied','Phone Screen','Technical','Offer','Rejected','Ghosted','Withdrawn'];
+const SOURCES = ['LinkedIn','Indeed','Referral','Company Site','Wellfound','Other'];
+const RESPONSES = ['Pending','Yes','No'];
+const CO_STAGES = ['Dream','Applying','Applied','Passed','Rejected'];
+const CERT_STATS = ['Not Started','In Progress','Complete'];
+
+const SK = {
+  applications: 'jae_applications',
+  outreach:      'jae_outreach',
+  templates:     'jae_templates',
+  companies:     'jae_companies',
+  certs:         'jae_certs',
+  schedule:      'jae_schedule',
+  checklist:     'jae_checklist',
+  apiKey:        'jae_apikey',
+};
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const state = {
+  applications: [],
+  outreach:     [],
+  templates:    [],
+  companies:    [],
+  certs:        [],
+  schedule:     [],
+  checklist:    {},
+  apiKey:       '',
+};
+
+let appSort = { col: 'dateApplied', dir: 'desc' };
+let appFilter = { search: '', stage: '', source: '' };
+let outSort = { col: 'date', dir: 'desc' };
+let outFilter = { response: '', template: '' };
+const appSel = new Set();
+let chartInstances = {};
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function gid(id) { return document.getElementById(id); }
+function uid() { return crypto.randomUUID(); }
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = gid('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = text; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    showToast('Copied!');
+  });
+}
+
+function formatDate(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function daysSince(isoStr) {
+  if (!isoStr) return null;
+  const d = new Date(isoStr + 'T12:00:00');
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+// ══════════════════════════════════════════════
+//  DEFAULT DATA
+// ══════════════════════════════════════════════
+function defaultApps() {
+  return [
+    { id: uid(), dateApplied:'2026-03-20', company:'Stripe', role:'Software Engineer', source:'LinkedIn', stage:'Phone Screen', contactName:'Jane Smith', contactLinkedIn:'https://linkedin.com', jobUrl:'https://stripe.com/jobs', followupDate:'2026-03-25', notes:'Alumni referral — strong fit' },
+    { id: uid(), dateApplied:'2026-03-22', company:'Notion', role:'Full Stack Engineer', source:'Company Site', stage:'Applied', contactName:'', contactLinkedIn:'', jobUrl:'', followupDate:'2026-03-29', notes:'' },
+    { id: uid(), dateApplied:'2026-03-18', company:'Linear', role:'Frontend Engineer', source:'Wellfound', stage:'Technical', contactName:'Alex Kim', contactLinkedIn:'', jobUrl:'', followupDate:'2026-03-24', notes:'Take-home due Friday' },
+  ];
+}
+
+function defaultOutreach() {
+  return [
+    { id: uid(), date:'2026-03-21', name:'Marcus Chen', company:'Stripe', role:'Engineering Manager', templateUsed:'Cold Intro v1', messageSent:"Hi Marcus, I came across your work on Stripe's payments infrastructure and I'm really impressed by the engineering culture you've built. I'm a CS grad student actively exploring opportunities and would love to connect for a quick 15-minute chat.", response:'Yes', responseDate:'2026-03-23', nextAction:'Schedule coffee chat', notes:'' },
+    { id: uid(), date:'2026-03-23', name:'Priya Nair', company:'Notion', role:'Senior Engineer', templateUsed:'Alumni Connect', messageSent:'Hi Priya, I noticed we both went to UT Dallas. I\'m exploring opportunities at Notion and would love to learn about your experience on the engineering team. Happy to grab a virtual coffee!', response:'Pending', responseDate:'', nextAction:'Follow up Mar 30', notes:'' },
+    { id: uid(), date:'2026-03-24', name:'Sam Okafor', company:'Linear', role:'Tech Lead', templateUsed:'Cold Intro v1', messageSent:"Hi Sam, Linear's approach to project management tooling is something I deeply admire as an engineer who's used it daily. I'm actively exploring new grad roles and would love to connect.", response:'No', responseDate:'2026-03-25', nextAction:'', notes:'Auto-reply, team not hiring now' },
+  ];
+}
+
+function defaultTemplates() {
+  return [
+    { id: uid(), name:'Cold Intro v1', category:'LinkedIn', subject:'', body:"Hi {{name}},\n\nI came across your profile and was impressed by your work at {{company}}. I'm a software engineer exploring new opportunities and I'd love to connect and learn more about the engineering culture there.\n\nWould you be open to a quick 15-minute chat?\n\nBest,\nRushil", tags:[], createdAt:'2026-03-01' },
+    { id: uid(), name:'Alumni Connect', category:'LinkedIn', subject:'', body:"Hi {{name}},\n\nI noticed we share a connection through our alma mater. I'm currently exploring engineering roles and {{company}} is high on my list. Would love to hear about your experience there.\n\nHappy to grab a virtual coffee!\n\nBest,\nRushil", tags:[], createdAt:'2026-03-01' },
+    { id: uid(), name:'Referral Ask', category:'Email', subject:'Referral for {{role}} at {{company}}', body:"Hi {{name}},\n\nI hope you're doing well! I'm very interested in the {{role}} position at {{company}} and I noticed you work there. Would you be willing to refer me or share any insights about the role?\n\nI've attached my resume for your reference.\n\nThank you,\nRushil", tags:[], createdAt:'2026-03-01' },
+    { id: uid(), name:'Follow Up', category:'LinkedIn', subject:'', body:"Hi {{name}},\n\nJust following up on my message from last week. I remain very interested in opportunities at {{company}} and would love to connect when you have a moment.\n\nThanks,\nRushil", tags:[], createdAt:'2026-03-01' },
+  ];
+}
+
+// ══════════════════════════════════════════════
+//  STORAGE
+// ══════════════════════════════════════════════
+function load() {
+  function get(key, fallback) {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    try { return JSON.parse(raw); } catch { return fallback; }
+  }
+  state.applications = get(SK.applications, null) ?? defaultApps();
+  state.outreach     = get(SK.outreach,     null) ?? defaultOutreach();
+  state.templates    = get(SK.templates,    null) ?? defaultTemplates();
+  state.companies    = get(SK.companies,    []);
+  state.certs        = get(SK.certs,        []);
+  state.schedule     = get(SK.schedule,     []);
+  state.checklist    = get(SK.checklist,    {});
+  state.apiKey       = localStorage.getItem(SK.apiKey) || '';
+}
+
+function save(key) {
+  localStorage.setItem(SK[key], JSON.stringify(state[key]));
+}
+
+function saveApiKey(k) {
+  state.apiKey = k;
+  localStorage.setItem(SK.apiKey, k);
+}
+
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+function showTab(tab) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  const sec = gid('tab-' + tab);
+  if (sec) sec.classList.add('active');
+  const nav = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+  if (nav) nav.classList.add('active');
+  // lazy renders
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'tracker')   renderApps();
+  if (tab === 'outreach')  { renderOutreach(); renderOutreachStats(); }
+  if (tab === 'metrics')   renderMetrics();
+  // close sidebar on mobile
+  document.body.classList.remove('sidebar-open');
+}
+
+// ══════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════
+function openModal(title, bodyHTML, onSave) {
+  gid('modal-title').textContent = title;
+  gid('modal-body').innerHTML = bodyHTML;
+  const footer = gid('modal-footer');
+  if (onSave) {
+    footer.innerHTML = `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="modal-save">Save</button>`;
+    gid('modal-save').addEventListener('click', onSave);
+  } else {
+    footer.innerHTML = `<button class="btn btn-primary" onclick="closeModal()">Close</button>`;
+  }
+  gid('modal-overlay').classList.remove('hidden');
+}
+
+function closeModal() { gid('modal-overlay').classList.add('hidden'); }
+
+// close modal on overlay click
+gid('modal-overlay').addEventListener('click', e => { if (e.target === gid('modal-overlay')) closeModal(); });
+
+// ══════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard() {
+  const apps = state.applications;
+  const out  = state.outreach;
+
+  const total = apps.length;
+  const responded = out.filter(o => o.response === 'Yes').length;
+  const rate = out.length ? ((responded / out.length) * 100).toFixed(0) + '%' : '0%';
+  const pending = out.filter(o => o.response === 'Pending').length;
+  const td = todayStr();
+  const dueToday = apps.filter(a => hasAlert(a));
+
+  gid('stat-total').textContent = total;
+  gid('stat-rate').textContent  = rate;
+  gid('stat-outreach').textContent = pending;
+  gid('stat-followups').textContent = dueToday.length;
+
+  gid('dash-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+  // follow-up list
+  const fl = gid('followup-list');
+  if (dueToday.length === 0) {
+    fl.innerHTML = '<div class="empty-state">No follow-ups due. Keep pushing!</div>';
+  } else {
+    fl.innerHTML = dueToday.map(a => `
+      <div class="followup-item">
+        <div><span class="followup-company">${esc(a.company)}</span> <span class="followup-role">— ${esc(a.role)}</span></div>
+        <div class="followup-date">${a.followupDate}</div>
+      </div>
+    `).join('');
+  }
+
+  renderChecklist();
+}
+
+const TASKS = [
+  { key:'apply_jobs',    label:'Apply to 2+ jobs' },
+  { key:'send_outreach', label:'Send 3+ outreach messages' },
+  { key:'followup_apps', label:'Follow up on pending applications' },
+  { key:'review_board',  label:'Review job boards' },
+  { key:'update_tracker',label:'Update application tracker' },
+  { key:'network_li',    label:'Network on LinkedIn' },
+];
+
+function renderChecklist() {
+  const td = todayStr();
+  if (!state.checklist[td]) { state.checklist[td] = {}; save('checklist'); }
+  const day = state.checklist[td];
+  const container = gid('daily-checklist');
+  container.innerHTML = TASKS.map(t => `
+    <label class="checklist-item ${day[t.key] ? 'done' : ''}" data-task="${t.key}">
+      <input type="checkbox" ${day[t.key] ? 'checked' : ''}> <span>${t.label}</span>
+    </label>
+  `).join('');
+  container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const td2 = todayStr();
+      if (!state.checklist[td2]) state.checklist[td2] = {};
+      const key = cb.closest('[data-task]').dataset.task;
+      state.checklist[td2][key] = cb.checked;
+      save('checklist');
+      cb.closest('.checklist-item').classList.toggle('done', cb.checked);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+//  TEMPLATES
+// ══════════════════════════════════════════════
+function renderTemplates() {
+  const g = gid('templates-grid');
+  if (!state.templates.length) {
+    g.innerHTML = '<div class="empty-state">No templates yet. Add one!</div>'; return;
+  }
+  g.innerHTML = state.templates.map(t => `
+    <div class="template-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div class="template-name">${esc(t.name)}</div>
+        <span class="template-category">${esc(t.category)}</span>
+      </div>
+      <div class="template-preview">${esc(t.body.slice(0,160))}${t.body.length > 160 ? '…' : ''}</div>
+      <div class="template-actions">
+        <button class="btn btn-xs" onclick="openTemplateModal('${t.id}')">Edit</button>
+        <button class="btn btn-xs" onclick="copyText(${JSON.stringify(t.body)})">Copy</button>
+        <button class="btn btn-xs btn-danger" onclick="deleteTemplate('${t.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openTemplateModal(id = null) {
+  const t = id ? state.templates.find(x => x.id === id) : null;
+  const catOptions = ['LinkedIn','Email','Twitter','Other'].map(c =>
+    `<option ${t && t.category === c ? 'selected' : ''}>${c}</option>`).join('');
+  openModal(t ? 'Edit Template' : 'Add Template', `
+    <div class="form-grid">
+      <div class="form-row"><div class="form-label">Name</div><input type="text" id="tf-name" value="${esc(t?.name||'')}"></div>
+      <div class="form-row"><div class="form-label">Category</div><select id="tf-cat">${catOptions}</select></div>
+      <div class="form-row full"><div class="form-label">Subject (email only)</div><input type="text" id="tf-subject" value="${esc(t?.subject||'')}"></div>
+      <div class="form-row full"><div class="form-label">Body (use {{name}}, {{company}}, {{role}})</div><textarea id="tf-body" style="min-height:180px;">${esc(t?.body||'')}</textarea></div>
+    </div>
+  `, () => {
+    const name = gid('tf-name').value.trim();
+    const body = gid('tf-body').value.trim();
+    if (!name) { alert('Name required'); return; }
+    if (t) {
+      t.name = name; t.category = gid('tf-cat').value;
+      t.subject = gid('tf-subject').value.trim(); t.body = body;
+    } else {
+      state.templates.push({ id: uid(), name, category: gid('tf-cat').value, subject: gid('tf-subject').value.trim(), body, tags:[], createdAt: todayStr() });
+    }
+    save('templates');
+    renderTemplates();
+    closeModal();
+  });
+}
+
+function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  state.templates = state.templates.filter(t => t.id !== id);
+  save('templates'); renderTemplates();
+}
+
+// ══════════════════════════════════════════════
+//  APPLICATION TRACKER
+// ══════════════════════════════════════════════
+function hasAlert(app) {
+  if (!app.followupDate) return false;
+  if (!['Applied','Ghosted'].includes(app.stage)) return false;
+  return app.followupDate <= todayStr();
+}
+
+function stageRowClass(stage) {
+  const map = { 'Phone Screen':'row-phone', 'Technical':'row-technical', 'Offer':'row-offer', 'Rejected':'row-rejected' };
+  return map[stage] || '';
+}
+
+function stageBadgeClass(stage) {
+  const map = { 'Applied':'applied','Phone Screen':'phone','Technical':'technical','Offer':'offer','Rejected':'rejected','Ghosted':'ghosted','Withdrawn':'withdrawn' };
+  return 'badge badge-' + (map[stage] || 'applied');
+}
+
+function getFilteredApps() {
+  return state.applications.filter(a => {
+    if (appFilter.stage && a.stage !== appFilter.stage) return false;
+    if (appFilter.source && a.source !== appFilter.source) return false;
+    if (appFilter.search) {
+      const q = appFilter.search.toLowerCase();
+      if (!a.company.toLowerCase().includes(q) && !a.role.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b) => {
+    const va = (a[appSort.col]||'').toString().toLowerCase();
+    const vb = (b[appSort.col]||'').toString().toLowerCase();
+    return appSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+}
+
+function updateAppRowCount(filtered) {
+  const phones = filtered.filter(a => a.stage === 'Phone Screen').length;
+  const tech   = filtered.filter(a => a.stage === 'Technical').length;
+  const offers = filtered.filter(a => a.stage === 'Offer').length;
+  let parts = [`<span>${filtered.length}</span> application${filtered.length !== 1 ? 's' : ''}`];
+  if (phones) parts.push(`<span>${phones}</span> phone screen${phones !== 1 ? 's' : ''}`);
+  if (tech)   parts.push(`<span>${tech}</span> technical`);
+  if (offers) parts.push(`<span>${offers}</span> offer${offers !== 1 ? 's' : ''}`);
+  gid('app-row-count').innerHTML = parts.join(' — ');
+}
+
+function updateAppSortHeaders() {
+  document.querySelectorAll('#app-table th[data-col]').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.col === appSort.col) th.classList.add('sort-' + appSort.dir);
+  });
+}
+
+function updateBulkBtns() {
+  const hasSelection = appSel.size > 0;
+  gid('app-bulk-delete').disabled = !hasSelection;
+  gid('app-bulk-apply').disabled  = !hasSelection;
+}
+
+function renderApps() {
+  const filtered = getFilteredApps();
+  const tbody = gid('app-tbody');
+  tbody.innerHTML = '';
+
+  filtered.forEach(app => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = app.id;
+    const rc = stageRowClass(app.stage);
+    if (rc) tr.classList.add(rc);
+
+    const alert = hasAlert(app);
+    const stageOpts = STAGES.map(s => `<option${s===app.stage?' selected':''}>${s}</option>`).join('');
+    const srcOpts   = SOURCES.map(s => `<option${s===app.source?' selected':''}>${s}</option>`).join('');
+
+    const liUrl = app.contactLinkedIn
+      ? `<a class="url-link" href="${esc(app.contactLinkedIn)}" target="_blank" rel="noopener">↗ link</a>`
+      : '<span style="color:var(--text-faint)">—</span>';
+    const jobUrl = app.jobUrl
+      ? `<a class="url-link" href="${esc(app.jobUrl)}" target="_blank" rel="noopener">↗ link</a>`
+      : '<span style="color:var(--text-faint)">—</span>';
+
+    tr.innerHTML = `
+      <td class="td-check"><input type="checkbox" class="row-chk"${appSel.has(app.id)?' checked':''}></td>
+      <td contenteditable="true" data-field="dateApplied">${esc(app.dateApplied)}</td>
+      <td contenteditable="true" data-field="company" style="font-weight:600;">${esc(app.company)}</td>
+      <td contenteditable="true" data-field="role">${esc(app.role)}</td>
+      <td><select class="inline-select" data-field="source">${srcOpts}</select></td>
+      <td><select class="inline-select" data-field="stage">${stageOpts}</select></td>
+      <td contenteditable="true" data-field="contactName">${esc(app.contactName)}</td>
+      <td class="td-url">${liUrl}</td>
+      <td class="td-url">${jobUrl}</td>
+      <td contenteditable="true" data-field="followupDate">${esc(app.followupDate)}${alert?'<span class="alert-dot" title="Follow-up overdue">●</span>':''}</td>
+      <td contenteditable="true" data-field="notes" class="td-notes td-wide">${esc(app.notes)}</td>
+      <td class="td-actions"><button class="btn-del" data-action="del-app">×</button></td>
+    `;
+
+    // checkbox
+    tr.querySelector('.row-chk').addEventListener('change', e => {
+      if (e.target.checked) appSel.add(app.id); else appSel.delete(app.id);
+      updateBulkBtns();
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  updateAppRowCount(filtered);
+  updateAppSortHeaders();
+
+  // header checkbox sync
+  const all = gid('app-select-all');
+  if (filtered.length > 0) {
+    all.checked = filtered.every(a => appSel.has(a.id));
+    all.indeterminate = !all.checked && filtered.some(a => appSel.has(a.id));
+  } else {
+    all.checked = false; all.indeterminate = false;
+  }
+}
+
+function openAddAppModal(editId = null) {
+  const app = editId ? state.applications.find(a => a.id === editId) : null;
+  const stageOpts = STAGES.map(s => `<option${(!app&&s==='Applied')||( app&&s===app.stage)?' selected':''}>${s}</option>`).join('');
+  const srcOpts   = SOURCES.map(s => `<option${(!app&&s==='LinkedIn')||(app&&s===app.source)?' selected':''}>${s}</option>`).join('');
+
+  openModal(app ? 'Edit Application' : 'Add Application', `
+    <div class="form-grid">
+      <div class="form-row"><div class="form-label">Company *</div><input type="text" id="af-company" value="${esc(app?.company||'')}"></div>
+      <div class="form-row"><div class="form-label">Role *</div><input type="text" id="af-role" value="${esc(app?.role||'')}"></div>
+      <div class="form-row"><div class="form-label">Date Applied</div><input type="date" id="af-date" value="${app?.dateApplied||todayStr()}"></div>
+      <div class="form-row"><div class="form-label">Source</div><select id="af-source">${srcOpts}</select></div>
+      <div class="form-row"><div class="form-label">Stage</div><select id="af-stage">${stageOpts}</select></div>
+      <div class="form-row"><div class="form-label">Follow-up Date</div><input type="date" id="af-followup" value="${app?.followupDate||''}"></div>
+      <div class="form-row"><div class="form-label">Contact Name</div><input type="text" id="af-contact" value="${esc(app?.contactName||'')}"></div>
+      <div class="form-row"><div class="form-label">Contact LinkedIn</div><input type="url" id="af-linkedin" value="${esc(app?.contactLinkedIn||'')}"></div>
+      <div class="form-row full"><div class="form-label">Job URL</div><input type="url" id="af-joburl" value="${esc(app?.jobUrl||'')}"></div>
+      <div class="form-row full"><div class="form-label">Notes</div><textarea id="af-notes">${esc(app?.notes||'')}</textarea></div>
+    </div>
+  `, () => {
+    const company = gid('af-company').value.trim();
+    const role    = gid('af-role').value.trim();
+    if (!company) { alert('Company is required.'); return; }
+    const data = {
+      company, role,
+      dateApplied:      gid('af-date').value,
+      source:           gid('af-source').value,
+      stage:            gid('af-stage').value,
+      followupDate:     gid('af-followup').value,
+      contactName:      gid('af-contact').value.trim(),
+      contactLinkedIn:  gid('af-linkedin').value.trim(),
+      jobUrl:           gid('af-joburl').value.trim(),
+      notes:            gid('af-notes').value.trim(),
+    };
+    if (app) {
+      Object.assign(app, data);
+    } else {
+      state.applications.push({ id: uid(), ...data });
+    }
+    save('applications');
+    renderApps();
+    renderDashboard();
+    maybeRefreshMetrics();
+    closeModal();
+  });
+}
+
+function deleteApp(id) {
+  if (!confirm('Delete this application?')) return;
+  state.applications = state.applications.filter(a => a.id !== id);
+  appSel.delete(id);
+  save('applications'); renderApps(); renderDashboard(); maybeRefreshMetrics();
+}
+
+function exportCSV() {
+  const cols = ['dateApplied','company','role','source','stage','contactName','contactLinkedIn','jobUrl','followupDate','notes'];
+  const hdr  = ['Date Applied','Company','Role','Source','Stage','Contact Name','Contact LinkedIn','Job URL','Follow-up Date','Notes'];
+  const rows = state.applications.map(a => cols.map(c => `"${(a[c]||'').replace(/"/g,'""')}"`).join(','));
+  const csv  = [hdr.join(','), ...rows].join('\n');
+  const url  = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  const a    = Object.assign(document.createElement('a'), { href: url, download: 'applications.csv' });
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function setupAppTracker() {
+  // filters
+  gid('app-search').addEventListener('input', e => { appFilter.search = e.target.value; renderApps(); });
+  gid('app-stage-filter').addEventListener('change', e => { appFilter.stage = e.target.value; renderApps(); });
+  gid('app-source-filter').addEventListener('change', e => { appFilter.source = e.target.value; renderApps(); });
+
+  // export
+  gid('app-export-csv').addEventListener('click', exportCSV);
+
+  // bulk
+  gid('app-bulk-delete').addEventListener('click', () => {
+    if (!appSel.size) return;
+    if (!confirm(`Delete ${appSel.size} application(s)?`)) return;
+    state.applications = state.applications.filter(a => !appSel.has(a.id));
+    appSel.clear(); save('applications'); renderApps(); renderDashboard(); maybeRefreshMetrics();
+  });
+  gid('app-bulk-apply').addEventListener('click', () => {
+    const stage = gid('app-bulk-stage').value;
+    if (!stage || !appSel.size) return;
+    state.applications.forEach(a => { if (appSel.has(a.id)) a.stage = stage; });
+    save('applications'); renderApps(); renderDashboard(); maybeRefreshMetrics();
+  });
+
+  // select all
+  gid('app-select-all').addEventListener('change', e => {
+    const filtered = getFilteredApps();
+    if (e.target.checked) filtered.forEach(a => appSel.add(a.id));
+    else appSel.clear();
+    renderApps(); updateBulkBtns();
+  });
+
+  // sort headers
+  document.querySelectorAll('#app-table th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      if (appSort.col === th.dataset.col) appSort.dir = appSort.dir === 'asc' ? 'desc' : 'asc';
+      else { appSort.col = th.dataset.col; appSort.dir = 'asc'; }
+      renderApps();
+    });
+  });
+
+  // event delegation: blur (capture) for contenteditable
+  const tbody = gid('app-tbody');
+  tbody.addEventListener('blur', e => {
+    const td = e.target.closest('td[contenteditable]');
+    if (!td) return;
+    const tr = td.closest('tr[data-id]');
+    if (!tr) return;
+    const app = state.applications.find(a => a.id === tr.dataset.id);
+    if (!app) return;
+    const field = td.dataset.field;
+    const val   = td.innerText.trim();
+    // strip alert dot text if present
+    const clean = val.replace('●','').trim();
+    app[field] = clean;
+    save('applications');
+    updateAppRowCount(getFilteredApps());
+    renderDashboard(); maybeRefreshMetrics();
+  }, true);
+
+  // Enter key
+  tbody.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.matches('td[contenteditable]')) {
+      if (e.target.dataset.field !== 'notes') { e.preventDefault(); e.target.blur(); }
+    }
+  });
+
+  // select changes (source/stage)
+  tbody.addEventListener('change', e => {
+    if (e.target.matches('select[data-field]')) {
+      const tr  = e.target.closest('tr[data-id]');
+      if (!tr) return;
+      const app = state.applications.find(a => a.id === tr.dataset.id);
+      if (!app) return;
+      const field = e.target.dataset.field;
+      app[field] = e.target.value;
+      if (field === 'stage') {
+        tr.className = stageRowClass(app.stage) || '';
+        renderDashboard();
+      }
+      save('applications'); updateAppRowCount(getFilteredApps()); maybeRefreshMetrics();
+    }
+  });
+
+  // click delegation (delete)
+  tbody.addEventListener('click', e => {
+    if (e.target.matches('[data-action="del-app"]')) {
+      const id = e.target.closest('tr').dataset.id;
+      deleteApp(id);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  OUTREACH TRACKER
+// ══════════════════════════════════════════════
+function renderOutreachStats() {
+  const o   = state.outreach;
+  const total = o.length;
+  const yes   = o.filter(x => x.response === 'Yes').length;
+  const pend  = o.filter(x => x.response === 'Pending').length;
+  const rate  = total ? ((yes/total)*100).toFixed(1) : '0.0';
+  gid('outreach-stats-bar').innerHTML =
+    `<span>${total}</span> sent — <span>${yes}</span> responded (<span>${rate}%</span> response rate) — <span>${pend}</span> pending`;
+}
+
+function getFilteredOutreach() {
+  return state.outreach.filter(o => {
+    if (outFilter.response && o.response !== outFilter.response) return false;
+    if (outFilter.template && o.templateUsed !== outFilter.template) return false;
+    return true;
+  }).sort((a,b) => {
+    const va = (a[outSort.col]||'').toString().toLowerCase();
+    const vb = (b[outSort.col]||'').toString().toLowerCase();
+    return outSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+}
+
+function outRowClass(response) {
+  const map = { 'Yes':'row-responded-yes','No':'row-responded-no','Pending':'row-pending' };
+  return map[response] || 'row-pending';
+}
+
+function renderOutreach() {
+  // populate template filter
+  const tmplFilter = gid('out-template-filter');
+  const curTmpl = tmplFilter.value;
+  tmplFilter.innerHTML = '<option value="">All Templates</option>' +
+    [...new Set(state.outreach.map(o => o.templateUsed).filter(Boolean))].map(t => `<option${t===curTmpl?' selected':''}>${esc(t)}</option>`).join('');
+
+  const filtered = getFilteredOutreach();
+  const tbody = gid('out-tbody');
+  tbody.innerHTML = '';
+
+  filtered.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = o.id;
+    tr.className = outRowClass(o.response);
+    const respOpts = RESPONSES.map(r => `<option${r===o.response?' selected':''}>${r}</option>`).join('');
+    const truncated = o.messageSent ? (o.messageSent.length > 55 ? o.messageSent.slice(0,55) + '…' : o.messageSent) : '—';
+
+    tr.innerHTML = `
+      <td contenteditable="true" data-field="date">${esc(o.date)}</td>
+      <td contenteditable="true" data-field="name" style="font-weight:600;">${esc(o.name)}</td>
+      <td contenteditable="true" data-field="company">${esc(o.company)}</td>
+      <td contenteditable="true" data-field="role">${esc(o.role)}</td>
+      <td contenteditable="true" data-field="templateUsed">${esc(o.templateUsed)}</td>
+      <td>
+        <span class="msg-truncated">${esc(truncated)}</span>
+        <button class="expand-btn" data-action="expand-msg" data-id="${o.id}" title="View full message">↗</button>
+      </td>
+      <td><select class="inline-select" data-field="response">${respOpts}</select></td>
+      <td contenteditable="true" data-field="responseDate">${esc(o.responseDate)}</td>
+      <td contenteditable="true" data-field="nextAction">${esc(o.nextAction)}</td>
+      <td contenteditable="true" data-field="notes" class="td-notes">${esc(o.notes)}</td>
+      <td class="td-actions"><button class="btn-del" data-action="del-out">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openAddOutreachModal(editId = null) {
+  const o = editId ? state.outreach.find(x => x.id === editId) : null;
+  const tmplOpts = ['<option value="">— None —</option>', ...state.templates.map(t =>
+    `<option${o&&o.templateUsed===t.name?' selected':''}>${esc(t.name)}</option>`)].join('');
+  const respOpts = RESPONSES.map(r => `<option${o&&o.response===r?' selected':(!o&&r==='Pending'?' selected':'')}>${r}</option>`).join('');
+
+  openModal(o ? 'Edit Outreach' : 'Log Outreach', `
+    <div class="form-grid">
+      <div class="form-row"><div class="form-label">Date</div><input type="date" id="of-date" value="${o?.date||todayStr()}"></div>
+      <div class="form-row"><div class="form-label">Template Used</div><select id="of-template">${tmplOpts}</select></div>
+      <div class="form-row"><div class="form-label">Name</div><input type="text" id="of-name" value="${esc(o?.name||'')}"></div>
+      <div class="form-row"><div class="form-label">Company</div><input type="text" id="of-company" value="${esc(o?.company||'')}"></div>
+      <div class="form-row full"><div class="form-label">Their Role / Title</div><input type="text" id="of-role" value="${esc(o?.role||'')}"></div>
+      <div class="form-row full"><div class="form-label">Message Sent</div><textarea id="of-msg" style="min-height:120px;">${esc(o?.messageSent||'')}</textarea></div>
+      <div class="form-row"><div class="form-label">Response</div><select id="of-response">${respOpts}</select></div>
+      <div class="form-row"><div class="form-label">Response Date</div><input type="date" id="of-resp-date" value="${o?.responseDate||''}"></div>
+      <div class="form-row full"><div class="form-label">Next Action</div><input type="text" id="of-next" value="${esc(o?.nextAction||'')}"></div>
+      <div class="form-row full"><div class="form-label">Notes</div><textarea id="of-notes">${esc(o?.notes||'')}</textarea></div>
+    </div>
+  `, () => {
+    const name    = gid('of-name').value.trim();
+    const company = gid('of-company').value.trim();
+    const data = {
+      date:         gid('of-date').value,
+      name,
+      company,
+      role:         gid('of-role').value.trim(),
+      templateUsed: gid('of-template').value,
+      messageSent:  gid('of-msg').value.trim(),
+      response:     gid('of-response').value,
+      responseDate: gid('of-resp-date').value,
+      nextAction:   gid('of-next').value.trim(),
+      notes:        gid('of-notes').value.trim(),
+    };
+    if (o) {
+      Object.assign(o, data);
+    } else {
+      state.outreach.push({ id: uid(), ...data });
+    }
+    save('outreach');
+    renderOutreach(); renderOutreachStats(); maybeRefreshMetrics();
+    closeModal();
+  });
+
+  // pre-fill message from template selection
+  setTimeout(() => {
+    const tmplSel = gid('of-template');
+    if (tmplSel) tmplSel.addEventListener('change', () => {
+      const t = state.templates.find(x => x.name === tmplSel.value);
+      if (t) {
+        const n = (gid('of-name').value||'{{name}}');
+        const c = (gid('of-company').value||'{{company}}');
+        const r = (gid('of-role').value||'{{role}}');
+        gid('of-msg').value = t.body.replace(/\{\{name\}\}/g,n).replace(/\{\{company\}\}/g,c).replace(/\{\{role\}\}/g,r);
+      }
+    });
+  }, 50);
+}
+
+function deleteOutreach(id) {
+  if (!confirm('Delete this outreach entry?')) return;
+  state.outreach = state.outreach.filter(o => o.id !== id);
+  save('outreach'); renderOutreach(); renderOutreachStats(); maybeRefreshMetrics();
+}
+
+function openMsgModal(id) {
+  const o = state.outreach.find(x => x.id === id);
+  if (!o) return;
+  openModal('Message Sent', `<div style="white-space:pre-wrap;font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--text);">${esc(o.messageSent)}</div>`);
+  gid('modal-footer').innerHTML = `
+    <button class="btn" onclick="closeModal()">Close</button>
+    <button class="btn btn-primary" id="copy-msg-btn">Copy Message</button>
+  `;
+  gid('copy-msg-btn').addEventListener('click', () => { copyText(o.messageSent); });
+}
+
+function setupOutreachTracker() {
+  gid('out-response-filter').addEventListener('change', e => { outFilter.response = e.target.value; renderOutreach(); });
+  gid('out-template-filter').addEventListener('change', e => { outFilter.template  = e.target.value; renderOutreach(); });
+
+  document.querySelectorAll('#out-table th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      if (outSort.col === th.dataset.col) outSort.dir = outSort.dir === 'asc' ? 'desc' : 'asc';
+      else { outSort.col = th.dataset.col; outSort.dir = 'asc'; }
+      document.querySelectorAll('#out-table th[data-col]').forEach(h => h.classList.remove('sort-asc','sort-desc'));
+      th.classList.add('sort-' + outSort.dir);
+      renderOutreach();
+    });
+  });
+
+  const tbody = gid('out-tbody');
+
+  tbody.addEventListener('blur', e => {
+    const td = e.target.closest('td[contenteditable]');
+    if (!td) return;
+    const tr = td.closest('tr[data-id]');
+    if (!tr) return;
+    const o = state.outreach.find(x => x.id === tr.dataset.id);
+    if (!o) return;
+    o[td.dataset.field] = td.innerText.trim();
+    save('outreach'); renderOutreachStats(); maybeRefreshMetrics();
+  }, true);
+
+  tbody.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.matches('td[contenteditable]')) {
+      if (e.target.dataset.field !== 'notes') { e.preventDefault(); e.target.blur(); }
+    }
+  });
+
+  tbody.addEventListener('change', e => {
+    if (e.target.matches('select[data-field="response"]')) {
+      const tr = e.target.closest('tr[data-id]');
+      if (!tr) return;
+      const o = state.outreach.find(x => x.id === tr.dataset.id);
+      if (!o) return;
+      o.response = e.target.value;
+      tr.className = outRowClass(o.response);
+      save('outreach'); renderOutreachStats(); maybeRefreshMetrics();
+    }
+  });
+
+  tbody.addEventListener('click', e => {
+    if (e.target.matches('[data-action="del-out"]'))    deleteOutreach(e.target.closest('tr').dataset.id);
+    if (e.target.matches('[data-action="expand-msg"]')) openMsgModal(e.target.dataset.id);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  COMPANIES
+// ══════════════════════════════════════════════
+function renderCompanies() {
+  const tbody = gid('companies-tbody');
+  if (!state.companies.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px;padding:16px;">No companies yet.</td></tr>'; return;
+  }
+  const coStageOpts = s => CO_STAGES.map(x => `<option${x===s?' selected':''}>${x}</option>`).join('');
+  tbody.innerHTML = state.companies.map(c => `
+    <tr data-id="${c.id}">
+      <td contenteditable="true" data-field="name" data-entity="companies">${esc(c.name)}</td>
+      <td>${c.website ? `<a class="url-link" href="${esc(c.website)}" target="_blank" rel="noopener">↗ ${esc(c.website.replace(/^https?:\/\//,'').slice(0,30))}</a>` : '—'}</td>
+      <td contenteditable="true" data-field="industry" data-entity="companies">${esc(c.industry)}</td>
+      <td><select class="inline-select" onchange="updateEntityField('companies','${c.id}','stage',this.value)">${coStageOpts(c.stage)}</select></td>
+      <td contenteditable="true" data-field="notes" data-entity="companies" class="td-notes">${esc(c.notes)}</td>
+      <td class="td-actions"><button class="btn-del" onclick="deleteEntity('companies','${c.id}')">×</button></td>
+    </tr>
+  `).join('');
+  setupEntityBlur('companies-tbody','companies');
+}
+
+function openCompanyModal() {
+  const stageOpts = CO_STAGES.map(s => `<option>${s}</option>`).join('');
+  openModal('Add Company', `
+    <div class="form-grid">
+      <div class="form-row"><div class="form-label">Company *</div><input type="text" id="cf-name"></div>
+      <div class="form-row"><div class="form-label">Status</div><select id="cf-stage">${stageOpts}</select></div>
+      <div class="form-row full"><div class="form-label">Website</div><input type="url" id="cf-website" placeholder="https://…"></div>
+      <div class="form-row"><div class="form-label">Industry</div><input type="text" id="cf-industry"></div>
+      <div class="form-row full"><div class="form-label">Notes</div><textarea id="cf-notes"></textarea></div>
+    </div>
+  `, () => {
+    const name = gid('cf-name').value.trim();
+    if (!name) { alert('Company name required.'); return; }
+    state.companies.push({ id: uid(), name, website: gid('cf-website').value.trim(), industry: gid('cf-industry').value.trim(), stage: gid('cf-stage').value, notes: gid('cf-notes').value.trim() });
+    save('companies'); renderCompanies(); closeModal();
+  });
+}
+
+// ══════════════════════════════════════════════
+//  CERTS
+// ══════════════════════════════════════════════
+function renderCerts() {
+  const tbody = gid('certs-tbody');
+  if (!state.certs.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px;padding:16px;">No certs yet.</td></tr>'; return;
+  }
+  tbody.innerHTML = state.certs.map(c => `
+    <tr data-id="${c.id}">
+      <td contenteditable="true" data-field="name" data-entity="certs">${esc(c.name)}</td>
+      <td contenteditable="true" data-field="provider" data-entity="certs">${esc(c.provider)}</td>
+      <td contenteditable="true" data-field="targetDate" data-entity="certs">${esc(c.targetDate)}</td>
+      <td><select class="inline-select" onchange="updateEntityField('certs','${c.id}','status',this.value)">${CERT_STATS.map(s=>`<option${s===c.status?' selected':''}>${s}</option>`).join('')}</select></td>
+      <td contenteditable="true" data-field="notes" data-entity="certs" class="td-notes">${esc(c.notes)}</td>
+      <td class="td-actions"><button class="btn-del" onclick="deleteEntity('certs','${c.id}')">×</button></td>
+    </tr>
+  `).join('');
+  setupEntityBlur('certs-tbody','certs');
+}
+
+function openCertModal() {
+  const statusOpts = CERT_STATS.map(s => `<option>${s}</option>`).join('');
+  openModal('Add Certification', `
+    <div class="form-grid">
+      <div class="form-row"><div class="form-label">Certification *</div><input type="text" id="cert-name"></div>
+      <div class="form-row"><div class="form-label">Provider</div><input type="text" id="cert-provider"></div>
+      <div class="form-row"><div class="form-label">Target Date</div><input type="date" id="cert-date"></div>
+      <div class="form-row"><div class="form-label">Status</div><select id="cert-status">${statusOpts}</select></div>
+      <div class="form-row full"><div class="form-label">Notes</div><textarea id="cert-notes"></textarea></div>
+    </div>
+  `, () => {
+    const name = gid('cert-name').value.trim();
+    if (!name) { alert('Cert name required.'); return; }
+    state.certs.push({ id: uid(), name, provider: gid('cert-provider').value.trim(), targetDate: gid('cert-date').value, status: gid('cert-status').value, notes: gid('cert-notes').value.trim() });
+    save('certs'); renderCerts(); closeModal();
+  });
+}
+
+// ══════════════════════════════════════════════
+//  SCHEDULE
+// ══════════════════════════════════════════════
+function renderSchedule() {
+  const tbody = gid('schedule-tbody');
+  if (!state.schedule.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px;padding:16px;">No schedule blocks yet.</td></tr>'; return;
+  }
+  const sorted = [...state.schedule].sort((a,b) => a.time.localeCompare(b.time));
+  tbody.innerHTML = sorted.map(s => `
+    <tr data-id="${s.id}">
+      <td contenteditable="true" data-field="time" data-entity="schedule">${esc(s.time)}</td>
+      <td contenteditable="true" data-field="activity" data-entity="schedule">${esc(s.activity)}</td>
+      <td contenteditable="true" data-field="duration" data-entity="schedule">${esc(String(s.duration))}</td>
+      <td contenteditable="true" data-field="notes" data-entity="schedule" class="td-notes">${esc(s.notes)}</td>
+      <td class="td-actions"><button class="btn-del" onclick="deleteEntity('schedule','${s.id}')">×</button></td>
+    </tr>
+  `).join('');
+  setupEntityBlur('schedule-tbody','schedule');
+}
+
+function openScheduleModal() {
+  openModal('Add Schedule Block', `
+    <div class="form-grid">
+      <div class="form-row"><div class="form-label">Time (e.g. 9:00 AM)</div><input type="text" id="sc-time" placeholder="9:00 AM"></div>
+      <div class="form-row"><div class="form-label">Duration (min)</div><input type="number" id="sc-dur" value="60" min="15" step="15"></div>
+      <div class="form-row full"><div class="form-label">Activity *</div><input type="text" id="sc-activity"></div>
+      <div class="form-row full"><div class="form-label">Notes</div><textarea id="sc-notes"></textarea></div>
+    </div>
+  `, () => {
+    const activity = gid('sc-activity').value.trim();
+    if (!activity) { alert('Activity required.'); return; }
+    state.schedule.push({ id: uid(), time: gid('sc-time').value.trim(), activity, duration: parseInt(gid('sc-dur').value)||60, notes: gid('sc-notes').value.trim() });
+    save('schedule'); renderSchedule(); closeModal();
+  });
+}
+
+// Generic entity helpers
+function updateEntityField(entity, id, field, value) {
+  const item = state[entity].find(x => x.id === id);
+  if (item) { item[field] = value; save(entity); }
+}
+
+function deleteEntity(entity, id) {
+  if (!confirm('Delete this entry?')) return;
+  state[entity] = state[entity].filter(x => x.id !== id);
+  save(entity);
+  if (entity === 'companies') renderCompanies();
+  if (entity === 'certs')     renderCerts();
+  if (entity === 'schedule')  renderSchedule();
+}
+
+function setupEntityBlur(tbodyId, entity) {
+  const tbody = gid(tbodyId);
+  if (!tbody) return;
+  tbody.addEventListener('blur', e => {
+    const td = e.target.closest('td[contenteditable][data-entity]');
+    if (!td || td.dataset.entity !== entity) return;
+    const tr = td.closest('tr[data-id]');
+    if (!tr) return;
+    const item = state[entity].find(x => x.id === tr.dataset.id);
+    if (!item) return;
+    item[td.dataset.field] = td.innerText.trim();
+    save(entity);
+  }, true);
+}
+
+// ══════════════════════════════════════════════
+//  METRICS
+// ══════════════════════════════════════════════
+function maybeRefreshMetrics() {
+  if (gid('tab-metrics').classList.contains('active')) renderMetrics();
+}
+
+function getLast8Weeks() {
+  const weeks = [];
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const thisSun = new Date(now);
+  thisSun.setDate(now.getDate() - dayOfWeek);
+  thisSun.setHours(0,0,0,0);
+
+  for (let i = 7; i >= 0; i--) {
+    const start = new Date(thisSun);
+    start.setDate(thisSun.getDate() - i * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23,59,59,999);
+    const label = `${start.getMonth()+1}/${start.getDate()}`;
+    weeks.push({ label, start, end });
+  }
+  return weeks;
+}
+
+function inWeek(isoDate, week) {
+  if (!isoDate) return false;
+  const d = new Date(isoDate + 'T12:00:00');
+  return d >= week.start && d <= week.end;
+}
+
+function renderMetrics() {
+  // destroy old charts
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch {} });
+  chartInstances = {};
+
+  Chart.defaults.color = '#666';
+  Chart.defaults.borderColor = '#252525';
+
+  const BAR_BG   = 'rgba(0,255,65,0.6)';
+  const BAR_BRD  = '#00ff41';
+  const LINE_CLR = '#ffbb33';
+  const PIE_CLRS = ['#00ff41','#4499ff','#ffbb33','#ff4444','#aa77ff','#00ccff','#ff7744'];
+
+  const opts = (extra = {}) => ({
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { labels: { color: '#666', font: { family:"'IBM Plex Mono',monospace", size:10 } } },
+      tooltip: { backgroundColor:'#1c1c1c', borderColor:'#333', borderWidth:1, titleColor:'#e0e0e0', bodyColor:'#888' }
+    },
+    scales: {
+      x: { grid: { color:'#1a1a1a' }, ticks: { color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } } },
+      y: { grid: { color:'#1a1a1a' }, ticks: { color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } }, beginAtZero: true }
+    },
+    ...extra
+  });
+
+  const weeks = getLast8Weeks();
+  const labels = weeks.map(w => w.label);
+
+  // Weekly apps
+  const appCounts = weeks.map(w => state.applications.filter(a => inWeek(a.dateApplied, w)).length);
+  chartInstances.apps = new Chart(gid('chart-weekly-apps'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label:'Applications', data: appCounts, backgroundColor: BAR_BG, borderColor: BAR_BRD, borderWidth:1 }] },
+    options: opts()
+  });
+
+  // Weekly outreach
+  const outCounts = weeks.map(w => state.outreach.filter(o => inWeek(o.date, w)).length);
+  chartInstances.out = new Chart(gid('chart-weekly-out'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label:'Outreach Sent', data: outCounts, backgroundColor:'rgba(68,153,255,0.6)', borderColor:'#4499ff', borderWidth:1 }] },
+    options: opts()
+  });
+
+  // Response rate over time
+  const respRates = weeks.map(w => {
+    const wo = state.outreach.filter(o => inWeek(o.date, w));
+    if (!wo.length) return 0;
+    return parseFloat(((wo.filter(o => o.response==='Yes').length / wo.length)*100).toFixed(1));
+  });
+  chartInstances.resp = new Chart(gid('chart-resp-rate'), {
+    type: 'line',
+    data: { labels, datasets: [{ label:'Response Rate %', data: respRates, borderColor: LINE_CLR, backgroundColor:'rgba(255,187,51,0.1)', tension:0.3, fill:true, pointBackgroundColor: LINE_CLR }] },
+    options: opts({ scales: { x: { grid:{ color:'#1a1a1a' }, ticks:{ color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } } }, y:{ grid:{ color:'#1a1a1a' }, ticks:{ color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } }, beginAtZero:true, max:100 } } })
+  });
+
+  // Stage funnel
+  const funnelStages = ['Applied','Phone Screen','Technical','Offer'];
+  const funnelCounts = funnelStages.map(s => state.applications.filter(a => a.stage===s).length);
+  chartInstances.funnel = new Chart(gid('chart-funnel'), {
+    type: 'bar',
+    data: { labels: funnelStages, datasets: [{ label:'Count', data: funnelCounts, backgroundColor:['rgba(68,153,255,0.6)','rgba(255,187,51,0.6)','rgba(170,119,255,0.6)','rgba(0,255,65,0.6)'], borderColor:['#4499ff','#ffbb33','#aa77ff','#00ff41'], borderWidth:1 }] },
+    options: { ...opts(), indexAxis:'y' }
+  });
+
+  // Source breakdown
+  const srcMap = {};
+  state.applications.forEach(a => { if (a.source) srcMap[a.source] = (srcMap[a.source]||0)+1; });
+  const srcLabels = Object.keys(srcMap);
+  chartInstances.source = new Chart(gid('chart-source'), {
+    type: 'pie',
+    data: { labels: srcLabels, datasets: [{ data: srcLabels.map(s=>srcMap[s]), backgroundColor: PIE_CLRS.slice(0, srcLabels.length), borderColor:'#0d0d0d', borderWidth:2 }] },
+    options: { responsive:true, maintainAspectRatio:true, plugins:{ legend:{ labels:{ color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } } }, tooltip:{ backgroundColor:'#1c1c1c', borderColor:'#333', borderWidth:1 } } }
+  });
+
+  // Template performance
+  const tmplMap = {};
+  state.outreach.forEach(o => {
+    if (!o.templateUsed) return;
+    if (!tmplMap[o.templateUsed]) tmplMap[o.templateUsed] = { total:0, yes:0 };
+    tmplMap[o.templateUsed].total++;
+    if (o.response==='Yes') tmplMap[o.templateUsed].yes++;
+  });
+  const tmplLabels = Object.keys(tmplMap);
+  const tmplRates  = tmplLabels.map(t => tmplMap[t].total ? parseFloat(((tmplMap[t].yes/tmplMap[t].total)*100).toFixed(1)) : 0);
+  chartInstances.tmpl = new Chart(gid('chart-template'), {
+    type: 'bar',
+    data: { labels: tmplLabels, datasets: [{ label:'Response Rate %', data: tmplRates, backgroundColor:'rgba(255,187,51,0.6)', borderColor:'#ffbb33', borderWidth:1 }] },
+    options: opts({ scales: { x:{ grid:{ color:'#1a1a1a' }, ticks:{ color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } } }, y:{ grid:{ color:'#1a1a1a' }, ticks:{ color:'#666', font:{ family:"'IBM Plex Mono',monospace", size:10 } }, beginAtZero:true, max:100 } } })
+  });
+
+  // Big numbers
+  const lastApp = state.applications.sort((a,b) => (b.dateApplied||'').localeCompare(a.dateApplied||''))[0];
+  const lastOut = state.outreach.sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
+  const dApp = lastApp ? daysSince(lastApp.dateApplied) : null;
+  const dOut = lastOut ? daysSince(lastOut.date) : null;
+  const appEl = gid('metric-days-app');
+  const outEl = gid('metric-days-out');
+  appEl.textContent = dApp !== null ? dApp : '—';
+  outEl.textContent = dOut !== null ? dOut : '—';
+  appEl.className = 'metric-big-value' + (dApp !== null && dApp > 1 ? ' danger' : '');
+  outEl.className = 'metric-big-value' + (dOut !== null && dOut > 1 ? ' danger' : '');
+}
+
+// ══════════════════════════════════════════════
+//  TAILOR RESUME
+// ══════════════════════════════════════════════
+async function analyzeJD() {
+  const apiKey = gid('tailor-api-key').value.trim();
+  const jd     = gid('tailor-jd').value.trim();
+  const errEl  = gid('tailor-error');
+  const btn    = gid('tailor-btn');
+
+  errEl.classList.remove('visible');
+
+  if (!apiKey) { errEl.textContent = 'API key is required.'; errEl.classList.add('visible'); return; }
+  if (!jd)     { errEl.textContent = 'Please paste a job description.'; errEl.classList.add('visible'); return; }
+
+  saveApiKey(apiKey);
+  btn.disabled = true; btn.textContent = 'Analyzing…';
+
+  const prompt = `You are a resume optimization expert. Analyze the following resume against the job description and return ONLY valid JSON with NO markdown formatting, code fences, or extra text. Use exactly this JSON structure:
+{"ats_score":72,"missing_keywords":["keyword1","keyword2"],"strong_matches":["bullet that matches well"],"rewrites":[{"original":"original bullet text","rewrite":"improved bullet text"}],"cover_note":"one paragraph cover note for Wellfound"}
+
+Rules:
+- ats_score: integer 0-100 measuring keyword and skills match
+- missing_keywords: up to 15 important keywords/skills from JD not in resume
+- strong_matches: 3-5 resume bullets/points that already match well
+- rewrites: exactly 3 rewrites for weakest bullets, keep concise
+- cover_note: 2-3 sentences max, professional, specific to this role
+
+RESUME:
+${RESUME_CONST}
+
+JOB DESCRIPTION:
+${jd}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-use': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const err = await res.json(); msg = err.error?.message || msg; } catch {}
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const raw  = data.content?.[0]?.text || '';
+    const clean = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    const result = JSON.parse(clean);
+    renderTailorResults(result);
+  } catch(e) {
+    errEl.textContent = 'Analysis failed: ' + e.message;
+    errEl.classList.add('visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Analyze JD';
+  }
+}
+
+function renderTailorResults(r) {
+  const scoreEl = gid('ats-score-num');
+  scoreEl.textContent = r.ats_score ?? '—';
+  scoreEl.className = 'ats-score-num ' + (r.ats_score >= 80 ? 'green' : r.ats_score >= 60 ? 'yellow' : 'red');
+
+  // Missing keywords
+  gid('result-missing').innerHTML = (r.missing_keywords||[]).map(k =>
+    `<span class="chip" onclick="copyText('${esc(k)}')" title="Click to copy">${esc(k)} ⊕</span>`
+  ).join('');
+
+  // Strong matches
+  gid('result-matches').innerHTML = (r.strong_matches||[]).map(m =>
+    `<li class="match-item">✓ ${esc(m)}</li>`
+  ).join('');
+
+  // Rewrites
+  gid('result-rewrites').innerHTML = (r.rewrites||[]).map((rw,i) => `
+    <div class="rewrite-card">
+      <div class="rewrite-original">${esc(rw.original)}</div>
+      <div class="rewrite-new">→ ${esc(rw.rewrite)}</div>
+      <button class="btn btn-xs" onclick="copyText(${JSON.stringify(rw.rewrite)})">Copy Rewrite</button>
+    </div>
+  `).join('');
+
+  // Cover note
+  gid('result-cover').textContent = r.cover_note || '';
+  gid('copy-cover-btn').onclick = () => copyText(r.cover_note || '');
+
+  gid('tailor-results').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+function init() {
+  load();
+
+  // Navigation
+  document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+    item.addEventListener('click', () => showTab(item.dataset.tab));
+  });
+
+  // Mobile sidebar
+  gid('hamburger').addEventListener('click', () => document.body.classList.toggle('sidebar-open'));
+  gid('sidebar-overlay').addEventListener('click', () => document.body.classList.remove('sidebar-open'));
+
+  // Setup trackers
+  setupAppTracker();
+  setupOutreachTracker();
+
+  // Tailor API key pre-fill
+  if (state.apiKey) gid('tailor-api-key').value = state.apiKey;
+
+  // Initial renders
+  renderDashboard();
+  renderTemplates();
+  renderApps();
+  renderCompanies();
+  renderCerts();
+  renderSchedule();
+  renderOutreach();
+  renderOutreachStats();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
