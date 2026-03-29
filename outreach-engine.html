@@ -1541,6 +1541,29 @@ function defaultTemplates() {
   ];
 }
 
+function defaultCerts() {
+  return [
+    { id: uid(), name: 'AWS Cloud Practitioner (CLF-C02)', provider: 'AWS', targetDate: '2026-05-01', status: 'In Progress', notes: 'Stephane Maarek Udemy course + practice exams. 2-3 weeks study. $100 exam. Gets "AWS Certified" on resume.' },
+    { id: uid(), name: 'AWS Solutions Architect Associate (SAA-C03)', provider: 'AWS', targetDate: '2026-07-01', status: 'Not Started', notes: 'Gold standard cloud cert. Adrian Cantrill or Stephane Maarek. 4-6 weeks study. $150 exam.' },
+    { id: uid(), name: 'AWS Developer Associate (DVA-C02)', provider: 'AWS', targetDate: '2026-09-01', status: 'Not Started', notes: 'Completes the associate trifecta. 3-4 weeks study. $150 exam.' },
+    { id: uid(), name: 'CKAD (Kubernetes)', provider: 'CNCF', targetDate: '2026-08-01', status: 'Not Started', notes: 'Optional — high impact for infra/platform roles. Performance-based exam. 4-6 weeks. $395.' },
+  ];
+}
+
+function defaultSchedule() {
+  return [
+    { id: uid(), time: '7:00 AM', activity: 'Leetcode — 2 problems (Neetcode 150)', duration: 90, notes: 'Week 1-2: Arrays, Hashing, Two Pointers, Sliding Window. Week 3-4: Stack, Binary Search, Trees.' },
+    { id: uid(), time: '8:30 AM', activity: 'AWS cert study', duration: 60, notes: 'CLF-C02 first. Stephane Maarek course + practice exams.' },
+    { id: uid(), time: '9:30 AM', activity: 'Apply to 2+ jobs', duration: 60, notes: 'Use tailoring engine. Target 60 apps/month.' },
+    { id: uid(), time: '10:30 AM', activity: 'Project work — cloud-deployed microservices', duration: 120, notes: 'Deploy on AWS (ECS/Lambda + API Gateway + RDS). Gets real AWS bullets on resume.' },
+    { id: uid(), time: '12:30 PM', activity: 'Lunch break', duration: 60, notes: '' },
+    { id: uid(), time: '1:30 PM', activity: 'LinkedIn outreach — 3+ messages', duration: 45, notes: 'Use outreach templates. Target 10+ messages/week.' },
+    { id: uid(), time: '2:15 PM', activity: 'System design study', duration: 60, notes: 'DDIA chapters 1-6. Alex Xu / ByteByteGo videos. Practice: URL shortener, chat, rate limiter.' },
+    { id: uid(), time: '3:15 PM', activity: 'Follow up on pending applications', duration: 30, notes: 'Check tracker for overdue follow-ups.' },
+    { id: uid(), time: '3:45 PM', activity: 'Open source contributions / portfolio', duration: 60, notes: 'Fix docs, add tests, small features in popular repos. Update portfolio site.' },
+  ];
+}
+
 // ══════════════════════════════════════════════
 //  STORAGE
 // ══════════════════════════════════════════════
@@ -1554,8 +1577,8 @@ function load() {
   state.outreach     = get(SK.outreach,     null) ?? defaultOutreach();
   state.templates    = get(SK.templates,    null) ?? defaultTemplates();
   state.companies    = get(SK.companies,    []);
-  state.certs        = get(SK.certs,        []);
-  state.schedule     = get(SK.schedule,     []);
+  state.certs        = get(SK.certs,        null) ?? defaultCerts();
+  state.schedule     = get(SK.schedule,     null) ?? defaultSchedule();
   state.checklist    = get(SK.checklist,    {});
   state.apiKey       = localStorage.getItem(SK.apiKey) || '';
   state.resume       = localStorage.getItem(SK.resume) || RESUME_CONST;
