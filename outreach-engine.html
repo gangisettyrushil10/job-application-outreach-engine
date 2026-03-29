@@ -695,6 +695,128 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
   color: var(--danger);
   display: none;
 }
+
+/* ── RESUME EDITOR & TAILORED OUTPUT ── */
+.resume-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+  user-select: none;
+}
+.resume-toggle:hover { border-color: var(--accent); color: var(--accent-bright); }
+.resume-toggle .arrow { transition: transform 0.2s; }
+.resume-toggle.open .arrow { transform: rotate(90deg); }
+.resume-editor-wrap {
+  display: none;
+  margin-top: 8px;
+}
+.resume-editor-wrap.open { display: block; }
+.resume-editor {
+  width: 100%;
+  min-height: 300px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  resize: vertical;
+}
+.resume-editor:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-glow); }
+.resume-save-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.resume-save-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+
+.tailor-full-width {
+  grid-column: 1 / -1;
+}
+.tailored-output-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+.tailored-output-section.visible { display: flex; }
+.diff-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.diff-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.diff-panel-title {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+.diff-added { background: rgba(16,217,138,0.1); border-left: 2px solid var(--success); padding-left: 6px; }
+.diff-changed { background: rgba(251,191,36,0.08); border-left: 2px solid var(--warn); padding-left: 6px; }
+.diff-removed { background: rgba(248,113,113,0.08); border-left: 2px solid var(--danger); padding-left: 6px; text-decoration: line-through; opacity: 0.6; }
+.changes-summary {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+.changes-summary li { margin-bottom: 4px; }
+.changes-summary li::marker { color: var(--accent-bright); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-success {
+  background: var(--success);
+  color: #000;
+  border: 1px solid var(--success);
+  font-weight: 600;
+}
+.btn-success:hover { background: #0fc07a; box-shadow: 0 0 16px rgba(16,217,138,0.3); }
+.generating-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-bright);
+}
+.generating-indicator .spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-bright);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .error-msg.visible { display: block; }
 .tailor-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
 
@@ -789,6 +911,7 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-grid { grid-template-columns: 1fr; }
   .tailor-layout { grid-template-columns: 1fr; }
+  .diff-container { grid-template-columns: 1fr; }
   .metrics-big-grid { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: 1fr; }
 }
@@ -1031,6 +1154,22 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
 <!-- ═══════════════ TAILOR RESUME ═══════════════ -->
 <section id="tab-tailor" class="tab-section">
   <div class="section-header"><div class="section-title">Tailor Resume</div></div>
+
+  <!-- My Resume collapsible -->
+  <div style="margin-bottom:16px;">
+    <div class="resume-toggle" id="resume-toggle" onclick="toggleResumeEditor()">
+      <span class="arrow">&#9654;</span> My Resume (editable)
+    </div>
+    <div class="resume-editor-wrap" id="resume-editor-wrap">
+      <textarea class="resume-editor" id="resume-editor" spellcheck="false"></textarea>
+      <div class="resume-save-row">
+        <button class="btn btn-sm btn-primary" onclick="saveResumeFromEditor()">Save Resume</button>
+        <button class="btn btn-sm" onclick="resetResumeToDefault()">Reset to Default</button>
+        <span class="resume-save-hint" id="resume-save-hint"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="tailor-layout">
     <div class="tailor-panel">
       <div>
@@ -1042,7 +1181,10 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
         <div class="form-label" style="margin-bottom:4px;">Job Description</div>
         <textarea id="tailor-jd" placeholder="Paste the full job description here…"></textarea>
       </div>
-      <button class="btn btn-primary" id="tailor-btn" onclick="analyzeJD()">Analyze JD</button>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="tailor-btn" onclick="analyzeJD()">Analyze JD</button>
+        <button class="btn btn-success" id="generate-btn" onclick="generateTailoredResume()">Generate Tailored Resume</button>
+      </div>
       <div class="error-msg" id="tailor-error"></div>
     </div>
     <div class="tailor-panel" id="tailor-results" style="display:none;">
@@ -1066,6 +1208,39 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
         <div class="result-section-title">Wellfound Cover Note</div>
         <div class="cover-note-text" id="result-cover"></div>
         <button class="btn btn-sm" id="copy-cover-btn">Copy Cover Note</button>
+      </div>
+    </div>
+
+    <!-- Tailored Resume Output -->
+    <div class="tailored-output-section tailor-full-width" id="tailored-output">
+      <div class="result-section-title">Tailored Resume</div>
+      <div id="generating-indicator" class="generating-indicator" style="display:none;">
+        <div class="spinner"></div>
+        Generating tailored resume...
+      </div>
+      <div id="tailored-content" style="display:none;">
+        <div class="changes-summary">
+          <div class="result-section-title" style="margin-bottom:6px;">What Changed</div>
+          <ul id="tailored-changes"></ul>
+        </div>
+        <div class="diff-container">
+          <div>
+            <div class="diff-panel-title">Original LaTeX</div>
+            <div class="diff-panel" id="diff-original"></div>
+          </div>
+          <div>
+            <div class="diff-panel-title">Tailored LaTeX</div>
+            <div class="diff-panel" id="diff-tailored"></div>
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-primary" onclick="copyTailoredResume()">Copy LaTeX</button>
+          <button class="btn btn-sm" onclick="downloadTailoredResume()">Download .tex</button>
+          <button class="btn btn-sm btn-success" onclick="applyTailoredResume()">Apply Plain Text to My Resume</button>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:6px;">
+          Copy or download the .tex file, then compile with Overleaf or pdflatex to get your PDF.
+        </div>
       </div>
     </div>
   </div>
@@ -1124,6 +1299,140 @@ Teaching Assistant — Designed and graded final lab project, office hours, one-
 CS & Robotics Club President — Led club, organized technical workshops and coding events.
 `.trim();
 
+const LATEX_TEMPLATE = String.raw`\documentclass[9pt]{article}
+
+\usepackage[letterpaper,top=0.09in,bottom=0.09in,left=0.38in,right=0.38in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+\setlist[itemize]{
+    leftmargin=1.1em,
+    itemsep=0pt,
+    topsep=1pt,
+    parsep=0pt,
+    partopsep=0pt,
+    label=\textbullet
+}
+
+\newcommand{\ressection}[1]{%
+  \vspace{3pt}%
+  {\normalsize\bfseries\scshape #1}%
+  \vspace{0pt}%
+  \hrule height 0.5pt%
+  \vspace{2pt}%
+}
+
+\begin{document}
+
+% ==================== HEADER ====================
+\begin{center}
+    {\fontsize{17}{20}\selectfont \textbf{Rushil S. Gangisetty}}\\[1pt]
+    \href{mailto:gangisettyrushil@gmail.com}{gangisettyrushil@gmail.com}
+    \;$|$\;
+    (214) 883-3817
+    \;$|$\;
+    \href{https://www.linkedin.com/in/rushilgangisetty10/}{linkedin.com/in/rushilgangisetty10}
+    \;$|$\;
+    U.S. Citizen
+    \\[0.5pt]
+    \href{https://github.com/gangisettyrushil10}{github.com/gangisettyrushil10}
+    \;$|$\;
+    \href{https://rushil-gangisetty-portfolio.vercel.app/}{rushil-gangisetty-portfolio.vercel.app}
+\end{center}
+
+\vspace{-3pt}
+
+% ==================== EDUCATION ====================
+\ressection{Education}
+
+\textbf{University of Texas at Dallas} \hfill \textit{Aug 2026 -- May 2028} \\
+\textit{M.S. in Computer Science} \hfill \textit{GPA: 4.0/4.0}
+
+\vspace{2pt}
+
+\textbf{Austin College} \hfill \textit{Aug 2021 -- May 2025} \\
+\textit{B.S. in Computer Science and Mathematics} \hfill \textit{GPA: 3.5/4.0} \\
+\textbf{Coursework:} Data Structures \& Algorithms, Operating Systems, Databases, Machine Learning, Artificial Intelligence \\
+\textbf{Leadership:} President, Computer Science \& Robotics Club \\
+
+
+% ==================== TECHNICAL SKILLS ====================
+\ressection{Technical Skills}
+
+\textbf{Languages:} Java, C\#, Python, JavaScript, TypeScript, SQL, Bash \\
+\textbf{Frameworks:} ASP.NET Core, EF Core, React, React Native, Expo, Node.js, Next.js, Flask, FastAPI \\
+\textbf{Developer Tools:} Git, Docker, Postman, Linux, Visual Studio, VS Code, Figma, Chrome DevTools \\
+\textbf{Databases:} PostgreSQL, MySQL, SQL Server, Supabase, SQLite \\
+\textbf{AI / ML:} OpenAI API, scikit-learn, Prophet, IBM watsonx, LLM pipelines, DeepInfra \\
+\textbf{Product Skills:} REST APIs, MVC Architecture, Unit Testing, CI/CD, ETL Pipelines, JWT Auth, Stripe, Clerk
+
+% ==================== PROJECTS ====================
+\ressection{Projects}
+
+\textbf{Buzzr} $|$ \textit{React Native, TypeScript, Python, Supabase, Expo, PostgreSQL, scikit-learn} \hfill \textit{Oct 2025 -- Present}
+\begin{itemize}
+    \item Built Buzzr --- a Letterboxd-style sports platform for rating games, posting hot takes, and hosting watch parties; live on Apple TestFlight with \textbf{20} weekly active users and \textbf{100\%} week-1 retention across \textbf{8} leagues and \textbf{10,838} live games.
+    \item Engineered a two-tier ML entertainment scoring system (Python scikit-learn + TypeScript fallback) scoring \textbf{58} March Madness matchups; building a collaborative filtering recommendation engine on user ratings to surface personalized game suggestions.
+\end{itemize}
+
+\vspace{0pt}
+
+\textbf{Credit Union Ledger API} $|$ \textit{ASP.NET Core, C\#, EF Core, FluentValidation, PostgreSQL, Docker} \hfill \textit{2026}
+\begin{itemize}
+    \item Engineered a layered REST API for member management and transactions using dependency injection and repository pattern; enforces idempotent transactions, balance constraints, and full audit logging.
+    \item Implemented \textbf{100\%} rollback coverage on constraint violations, \textbf{10} integration tests across \textbf{7} endpoints, and Dockerized deployment with environment-specific config.
+\end{itemize}
+
+\vspace{0pt}
+
+\textbf{Business Analytics Dashboard} $|$ \textit{FastAPI, React 19, TypeScript, PostgreSQL, Prophet, scikit-learn, OpenAI} \hfill \textit{2025}
+\begin{itemize}
+    \item Built a full-stack analytics platform across \textbf{15+} endpoints and \textbf{7} backend services; processes \textbf{800+} row datasets through a multi-stage ETL pipeline, completing CSV-to-forecast in under \textbf{1.5 seconds}.
+    \item Integrated Prophet for 7/30/90-day forecasting with \textbf{95\%} confidence intervals, Isolation Forest for anomaly detection, and OpenAI API for AI-generated insights.
+\end{itemize}
+
+\vspace{0pt}
+
+\textbf{IBM Medscribe AI} $|$ \textit{React, JavaScript, Flask, Python, IBM watsonx} \hfill \textit{2025}
+\begin{itemize}
+    \item Built an AI clinical workflow for IBM's AI Experiential Learning Lab transforming physician notes into structured summaries using IBM watsonx, reducing manual review time by \textbf{50\%}.
+    \item Built a React review interface with citation-aware trust cues and live/mock demo modes across \textbf{100+} clinical documents.
+\end{itemize}
+
+% ==================== EXPERIENCE ====================
+\ressection{Relevant Experience}
+
+\textbf{Seam.ai} \hfill \textit{Aug 2024 -- May 2025} \\
+\textit{Software Engineering Intern} \hfill \textit{Remote}
+\begin{itemize}
+    \item Built full-stack SaaS features in Next.js with Clerk auth, Stripe payments, and Supabase; implemented protected API routes, org onboarding, and a Clerk-to-Supabase JWT bridge.
+    \item Engineered Python LLM pipelines using crawl4ai and \textbf{Llama 3.1 70B} via DeepInfra; chained \textbf{3} extraction stages per record with JSON schema enforcement and a two-stage repair fallback.
+    \item Built a Chrome MV3 extension with a service worker intercepting and replaying API requests across \textbf{8,000} generated filter combinations with O(1) Set-based deduplication.
+\end{itemize}
+
+\vspace{0pt}
+
+\textbf{Aeyesafe} \hfill \textit{Jun 2025 -- Aug 2025} \\
+\textit{Software Engineer Intern} \hfill \textit{Remote}
+\begin{itemize}
+    \item Tested IoT sensor hardware for a senior safety platform; verified end-to-end data flow from thermal, radar, and sleep devices through API ingestion to storage across multiple hardware configurations.
+    \item Documented failure modes across networked device configurations (X5 gateway, PZ10) including connectivity drops and data-sync issues; produced debugging runbooks for faster team triage.
+\end{itemize}
+
+\vspace{0pt}
+
+\textbf{Austin College} \hfill \textit{Aug 2024 -- Dec 2024} \\
+\textit{Teaching Assistant, Introductory Programming} \hfill \textit{Sherman, TX}
+\begin{itemize}
+    \item Designed and graded the final lab project; held office hours and one-on-one debugging sessions for introductory programming students.
+\end{itemize}
+
+\end{document}`;
+
 const STAGES = ['Applied','Phone Screen','Technical','Offer','Rejected','Ghosted','Withdrawn'];
 const SOURCES = ['LinkedIn','Indeed','Referral','Company Site','Wellfound','Other'];
 const RESPONSES = ['Pending','Yes','No'];
@@ -1139,6 +1448,7 @@ const SK = {
   schedule:      'jae_schedule',
   checklist:     'jae_checklist',
   apiKey:        'jae_apikey',
+  resume:        'jae_resume',
 };
 
 // ══════════════════════════════════════════════
@@ -1153,6 +1463,7 @@ const state = {
   schedule:     [],
   checklist:    {},
   apiKey:       '',
+  resume:       '',
 };
 
 let appSort = { col: 'dateApplied', dir: 'desc' };
@@ -1247,6 +1558,7 @@ function load() {
   state.schedule     = get(SK.schedule,     []);
   state.checklist    = get(SK.checklist,    {});
   state.apiKey       = localStorage.getItem(SK.apiKey) || '';
+  state.resume       = localStorage.getItem(SK.resume) || RESUME_CONST;
 }
 
 function save(key) {
@@ -1256,6 +1568,11 @@ function save(key) {
 function saveApiKey(k) {
   state.apiKey = k;
   localStorage.setItem(SK.apiKey, k);
+}
+
+function saveResume(text) {
+  state.resume = text;
+  localStorage.setItem(SK.resume, text);
 }
 
 // ══════════════════════════════════════════════
@@ -2179,6 +2496,61 @@ function renderMetrics() {
 // ══════════════════════════════════════════════
 //  TAILOR RESUME
 // ══════════════════════════════════════════════
+
+// Resume editor helpers
+function toggleResumeEditor() {
+  const toggle = gid('resume-toggle');
+  const wrap = gid('resume-editor-wrap');
+  const editor = gid('resume-editor');
+  toggle.classList.toggle('open');
+  wrap.classList.toggle('open');
+  if (wrap.classList.contains('open') && !editor.value) {
+    editor.value = state.resume;
+  }
+}
+
+function saveResumeFromEditor() {
+  const text = gid('resume-editor').value.trim();
+  if (!text) return;
+  saveResume(text);
+  gid('resume-save-hint').textContent = 'Saved!';
+  showToast('Resume saved');
+  setTimeout(() => { gid('resume-save-hint').textContent = ''; }, 2000);
+}
+
+function resetResumeToDefault() {
+  gid('resume-editor').value = RESUME_CONST;
+  saveResume(RESUME_CONST);
+  showToast('Resume reset to default');
+}
+
+let lastTailoredResume = '';
+let lastTailoredLatex = '';
+
+async function callClaudeAPI(apiKey, prompt, maxTokens) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-use': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const err = await res.json(); msg = err.error?.message || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return data.content?.[0]?.text || '';
+}
+
 async function analyzeJD() {
   const apiKey = gid('tailor-api-key').value.trim();
   const jd     = gid('tailor-jd').value.trim();
@@ -2204,35 +2576,13 @@ Rules:
 - cover_note: 2-3 sentences max, professional, specific to this role
 
 RESUME:
-${RESUME_CONST}
+${state.resume}
 
 JOB DESCRIPTION:
 ${jd}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-use': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try { const err = await res.json(); msg = err.error?.message || msg; } catch {}
-      throw new Error(msg);
-    }
-
-    const data = await res.json();
-    const raw  = data.content?.[0]?.text || '';
+    const raw = await callClaudeAPI(apiKey, prompt, 2000);
     const clean = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
     const result = JSON.parse(clean);
     renderTailorResults(result);
@@ -2242,6 +2592,165 @@ ${jd}`;
   } finally {
     btn.disabled = false; btn.textContent = 'Analyze JD';
   }
+}
+
+async function generateTailoredResume() {
+  const apiKey = gid('tailor-api-key').value.trim();
+  const jd     = gid('tailor-jd').value.trim();
+  const errEl  = gid('tailor-error');
+  const btn    = gid('generate-btn');
+
+  errEl.classList.remove('visible');
+
+  if (!apiKey) { errEl.textContent = 'API key is required.'; errEl.classList.add('visible'); return; }
+  if (!jd)     { errEl.textContent = 'Please paste a job description.'; errEl.classList.add('visible'); return; }
+
+  saveApiKey(apiKey);
+  btn.disabled = true; btn.textContent = 'Generating…';
+
+  const outputEl = gid('tailored-output');
+  const indicator = gid('generating-indicator');
+  const contentEl = gid('tailored-content');
+  outputEl.classList.add('visible');
+  indicator.style.display = 'flex';
+  contentEl.style.display = 'none';
+
+  const prompt = `You are an aggressive resume optimization engine. Your job is to rewrite a LaTeX resume to PERFECTLY match a job description.
+
+Return ONLY valid JSON with NO markdown, code fences, or extra text. Use this exact structure:
+{"latex":"the complete LaTeX document from \\\\documentclass to \\\\end{document}","plain_text":"plain text version of the tailored resume for the editor","changes":["change 1","change 2"],"keywords_added":["kw1","kw2"],"stretch_keywords":["kw that would require fabrication"]}
+
+CRITICAL LATEX RULES:
+- Return the COMPLETE LaTeX document — from \\documentclass to \\end{document}
+- Use the EXACT same preamble, commands (\\ressection, etc.), and formatting as the original
+- Keep the same \\documentclass[9pt]{article}, geometry, enumitem config, and \\ressection command
+- Properly escape LaTeX special chars: \\& \\% \\# \\$ \\_ \\{ \\} \\textbackslash
+- Use \\textbf{} for bold numbers/metrics, \\textit{} for italics, \\hfill for right-alignment
+- Use $|$ as separator in project headers, \\; between header items
+- Keep \\begin{itemize} / \\end{itemize} for bullet points with \\item
+- Use --- for em dashes, -- for en dashes in date ranges
+- The resume MUST fit on ONE page — do not add content that would overflow
+- Use \\vspace{0pt} between entries, \\vspace{2pt} and \\vspace{3pt} as in the original
+- All \\href links must remain valid and unchanged
+
+CONTENT RULES:
+1. Reorder the Skills section to front-load skills mentioned in the JD
+2. Add plausible skills from the JD if the candidate could reasonably have them
+3. Rewrite bullet points to naturally weave in JD keywords — no keyword stuffing
+4. Reorder bullets and sections to front-load the most JD-relevant experience
+5. For weak bullets (QA-sounding), reframe to emphasize engineering impact
+6. Keep all quantified metrics — do NOT fabricate numbers
+7. Every bullet starts with a strong action verb
+8. If a keyword has no connection to any experience, put it in stretch_keywords
+9. changes: list 5-8 specific changes and why
+10. keywords_added: all keywords woven in
+11. plain_text: a clean readable version (no LaTeX commands) for the resume editor
+
+ORIGINAL LATEX RESUME:
+${LATEX_TEMPLATE}
+
+PLAIN TEXT RESUME (for context):
+${state.resume}
+
+JOB DESCRIPTION:
+${jd}`;
+
+  try {
+    const raw = await callClaudeAPI(apiKey, prompt, 6000);
+    const clean = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    const result = JSON.parse(clean);
+
+    lastTailoredLatex = result.latex || '';
+    lastTailoredResume = result.plain_text || '';
+
+    // Render changes summary
+    const changesHtml = (result.changes || []).map(c => `<li>${esc(c)}</li>`).join('');
+    const keywordsHtml = (result.keywords_added || []).map(k =>
+      `<span class="chip" style="border-color:var(--success);color:var(--success);">${esc(k)}</span>`
+    ).join('');
+    const stretchHtml = (result.stretch_keywords || []).length > 0
+      ? `<div style="margin-top:10px;"><span style="color:var(--warn);font-size:10px;text-transform:uppercase;letter-spacing:1px;">Stretch Keywords (would require fabrication):</span><div class="chips-list" style="margin-top:6px;">${
+          (result.stretch_keywords||[]).map(k => `<span class="chip" style="border-color:var(--warn);color:var(--warn);">${esc(k)}</span>`).join('')
+        }</div></div>`
+      : '';
+
+    gid('tailored-changes').innerHTML = changesHtml
+      + `<li style="margin-top:8px;"><strong>Keywords added:</strong></li>`
+      + `<li style="list-style:none;"><div class="chips-list">${keywordsHtml}</div></li>`
+      + stretchHtml;
+
+    // Render LaTeX diff view
+    renderLatexDiffView(LATEX_TEMPLATE, lastTailoredLatex);
+
+    indicator.style.display = 'none';
+    contentEl.style.display = 'block';
+  } catch(e) {
+    errEl.textContent = 'Generation failed: ' + e.message;
+    errEl.classList.add('visible');
+    indicator.style.display = 'none';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generate Tailored Resume';
+  }
+}
+
+function renderLatexDiffView(original, tailored) {
+  const origLines = original.split('\n');
+  const tailLines = tailored.split('\n');
+
+  // Build a set of trimmed lines for fast lookup
+  const origSet = new Set(origLines.map(l => l.trim()).filter(Boolean));
+  const tailSet = new Set(tailLines.map(l => l.trim()).filter(Boolean));
+
+  gid('diff-original').innerHTML = origLines.map(line => {
+    const t = line.trim();
+    if (!t) return `<div style="height:4px;"></div>`;
+    if (!tailSet.has(t)) return `<div class="diff-removed">${esc(line)}</div>`;
+    return `<div>${esc(line)}</div>`;
+  }).join('');
+
+  gid('diff-tailored').innerHTML = tailLines.map(line => {
+    const t = line.trim();
+    if (!t) return `<div style="height:4px;"></div>`;
+    if (!origSet.has(t)) {
+      // Check for partial match (modified line — shares >40% words)
+      const partial = origLines.some(ol => {
+        const ot = ol.trim();
+        if (!ot || ot.length < 10) return false;
+        const words = ot.split(/\s+/);
+        const matchCount = words.filter(w => t.includes(w)).length;
+        return matchCount > words.length * 0.4 && matchCount > 2;
+      });
+      if (partial) return `<div class="diff-changed">${esc(line)}</div>`;
+      return `<div class="diff-added">${esc(line)}</div>`;
+    }
+    return `<div>${esc(line)}</div>`;
+  }).join('');
+}
+
+function copyTailoredResume() {
+  if (!lastTailoredLatex) return;
+  copyText(lastTailoredLatex);
+  showToast('LaTeX copied!');
+}
+
+function downloadTailoredResume() {
+  if (!lastTailoredLatex) return;
+  const blob = new Blob([lastTailoredLatex], { type: 'application/x-tex' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tailored-resume.tex';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Downloaded .tex file!');
+}
+
+function applyTailoredResume() {
+  if (!lastTailoredResume) return;
+  saveResume(lastTailoredResume);
+  const editor = gid('resume-editor');
+  if (editor.value) editor.value = lastTailoredResume;
+  showToast('Plain text resume updated — LaTeX is in your clipboard/download');
 }
 
 function renderTailorResults(r) {
@@ -2294,8 +2803,9 @@ function init() {
   setupAppTracker();
   setupOutreachTracker();
 
-  // Tailor API key pre-fill
+  // Tailor API key & resume pre-fill
   if (state.apiKey) gid('tailor-api-key').value = state.apiKey;
+  gid('resume-editor').value = state.resume;
 
   // Initial renders
   renderDashboard();
