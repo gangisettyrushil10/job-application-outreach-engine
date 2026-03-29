@@ -343,6 +343,7 @@ tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--bg-hover); }
 
 /* row stage colors */
+tr.row-oa td { background: rgba(255,165,0,0.12) !important; border-left: 2px solid rgba(255,165,0,0.4); }
 tr.row-offer td { background: rgba(0,255,136,0.15) !important; border-left: 2px solid rgba(0,255,136,0.4); }
 tr.row-phone td { background: rgba(255,230,0,0.12) !important; border-left: 2px solid rgba(255,230,0,0.4); }
 tr.row-technical td { background: rgba(0,212,255,0.12) !important; border-left: 2px solid rgba(0,212,255,0.4); }
@@ -350,7 +351,7 @@ tr.row-rejected td { background: rgba(255,71,87,0.12) !important; border-left: 2
 tr.row-responded-yes td { background: rgba(0,255,136,0.15) !important; border-left: 2px solid rgba(0,255,136,0.4); }
 tr.row-responded-no td { background: rgba(255,71,87,0.12) !important; border-left: 2px solid rgba(255,71,87,0.4); }
 tr.row-pending td { background: rgba(255,230,0,0.10) !important; border-left: 2px solid rgba(255,230,0,0.3); }
-tr.row-offer:hover td, tr.row-phone:hover td, tr.row-technical:hover td,
+tr.row-oa:hover td, tr.row-offer:hover td, tr.row-phone:hover td, tr.row-technical:hover td,
 tr.row-rejected:hover td, tr.row-responded-yes:hover td,
 tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3); }
 
@@ -382,6 +383,7 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
   letter-spacing: 0.5px;
 }
 .badge-applied { background: rgba(168,85,247,0.3); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.7); text-shadow: 0 0 8px rgba(168,85,247,0.5); }
+.badge-oa { background: rgba(255,165,0,0.3); color: #ffcc66; border: 1px solid rgba(255,165,0,0.7); text-shadow: 0 0 8px rgba(255,165,0,0.5); }
 .badge-phone { background: rgba(255,230,0,0.25); color: #fff176; border: 1px solid rgba(255,230,0,0.7); text-shadow: 0 0 8px rgba(255,230,0,0.4); }
 .badge-technical { background: rgba(0,212,255,0.25); color: #67e8f9; border: 1px solid rgba(0,212,255,0.7); text-shadow: 0 0 8px rgba(0,212,255,0.4); }
 .badge-offer { background: rgba(0,255,136,0.25); color: #6fffb3; border: 1px solid rgba(0,255,136,0.7); text-shadow: 0 0 8px rgba(0,255,136,0.5); }
@@ -446,6 +448,58 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
   text-shadow: 0 0 8px rgba(16,217,138,0.2);
 }
 .checklist-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+
+/* ── LEETCODE TRACKER ── */
+.lc-tracker {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 16px;
+}
+.lc-title { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.lc-counts { display: flex; gap: 10px; margin-bottom: 12px; }
+.lc-count-item { flex: 1; text-align: center; }
+.lc-count-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.lc-count-label.easy { color: var(--success); }
+.lc-count-label.medium { color: var(--warn); }
+.lc-count-label.hard { color: var(--danger); }
+.lc-count-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  padding: 6px;
+}
+.lc-count-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-glow); }
+.lc-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.lc-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  transition: width 0.4s ease;
+  box-shadow: 0 0 10px rgba(0,255,136,0.3);
+}
+.lc-progress-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+}
+.lc-progress-text strong { color: var(--accent-bright); text-shadow: 0 0 8px rgba(168,85,247,0.4); }
 
 /* ── TEMPLATE CARDS ── */
 .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
@@ -977,6 +1031,25 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
       <div class="checklist-grid" id="daily-checklist"></div>
     </div>
   </div>
+  <div class="lc-tracker">
+    <div class="lc-title">Leetcode Progress — Neetcode 150</div>
+    <div class="lc-counts">
+      <div class="lc-count-item">
+        <div class="lc-count-label easy">Easy</div>
+        <input type="number" class="lc-count-input" id="lc-easy" min="0" value="0">
+      </div>
+      <div class="lc-count-item">
+        <div class="lc-count-label medium">Medium</div>
+        <input type="number" class="lc-count-input" id="lc-medium" min="0" value="0">
+      </div>
+      <div class="lc-count-item">
+        <div class="lc-count-label hard">Hard</div>
+        <input type="number" class="lc-count-input" id="lc-hard" min="0" value="0">
+      </div>
+    </div>
+    <div class="lc-progress-bar"><div class="lc-progress-fill" id="lc-fill" style="width:0%"></div></div>
+    <div class="lc-progress-text"><span><strong id="lc-total">0</strong> / <span id="lc-target">150</span> problems</span><span id="lc-pct">0%</span></div>
+  </div>
 </section>
 
 <!-- ═══════════════ TEMPLATES ═══════════════ -->
@@ -1002,7 +1075,7 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
       <input type="text" class="filter-input" id="app-search" placeholder="Search company / role…">
       <select class="filter-select" id="app-stage-filter">
         <option value="">All Stages</option>
-        <option>Applied</option><option>Phone Screen</option><option>Technical</option>
+        <option>Applied</option><option>OA</option><option>Phone Screen</option><option>Technical</option>
         <option>Offer</option><option>Rejected</option><option>Ghosted</option><option>Withdrawn</option>
       </select>
       <select class="filter-select" id="app-source-filter">
@@ -1014,7 +1087,7 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
     <div class="toolbar-right">
       <select id="app-bulk-stage" class="filter-select" style="width:130px;">
         <option value="">Bulk Stage…</option>
-        <option>Applied</option><option>Phone Screen</option><option>Technical</option>
+        <option>Applied</option><option>OA</option><option>Phone Screen</option><option>Technical</option>
         <option>Offer</option><option>Rejected</option><option>Ghosted</option><option>Withdrawn</option>
       </select>
       <button class="btn btn-sm" id="app-bulk-apply" disabled>Apply</button>
@@ -1035,6 +1108,7 @@ tr.row-responded-no:hover td, tr.row-pending:hover td { filter: brightness(1.3);
           <th data-col="contactName">Contact</th>
           <th class="no-sort">LinkedIn</th>
           <th class="no-sort">Job URL</th>
+          <th data-col="salary">Salary</th>
           <th data-col="followupDate">Follow-up</th>
           <th data-col="notes" class="no-sort">Notes</th>
           <th class="no-sort td-actions"></th>
@@ -1438,7 +1512,7 @@ const LATEX_TEMPLATE = String.raw`\documentclass[9pt]{article}
 
 \end{document}`;
 
-const STAGES = ['Applied','Phone Screen','Technical','Offer','Rejected','Ghosted','Withdrawn'];
+const STAGES = ['Applied','OA','Phone Screen','Technical','Offer','Rejected','Ghosted','Withdrawn'];
 const SOURCES = ['LinkedIn','Indeed','Referral','Company Site','Wellfound','Other'];
 const RESPONSES = ['Pending','Yes','No'];
 const CO_STAGES = ['Dream','Applying','Applied','Passed','Rejected'];
@@ -1454,6 +1528,7 @@ const SK = {
   checklist:     'jae_checklist',
   apiKey:        'jae_apikey',
   resume:        'jae_resume',
+  leetcode:      'jae_leetcode',
 };
 
 // ══════════════════════════════════════════════
@@ -1469,6 +1544,7 @@ const state = {
   checklist:    {},
   apiKey:       '',
   resume:       '',
+  leetcode:     { easy: 0, medium: 0, hard: 0, target: 150 },
 };
 
 let appSort = { col: 'dateApplied', dir: 'desc' };
@@ -1587,6 +1663,7 @@ function load() {
   state.checklist    = get(SK.checklist,    {});
   state.apiKey       = localStorage.getItem(SK.apiKey) || '';
   state.resume       = localStorage.getItem(SK.resume) || RESUME_CONST;
+  state.leetcode     = get(SK.leetcode, null) ?? { easy: 0, medium: 0, hard: 0, target: 150 };
 }
 
 function save(key) {
@@ -1678,6 +1755,7 @@ function renderDashboard() {
   }
 
   renderChecklist();
+  renderLeetcode();
 }
 
 const TASKS = [
@@ -1709,6 +1787,27 @@ function renderChecklist() {
       cb.closest('.checklist-item').classList.toggle('done', cb.checked);
     });
   });
+}
+
+function renderLeetcode() {
+  const lc = state.leetcode;
+  gid('lc-easy').value = lc.easy;
+  gid('lc-medium').value = lc.medium;
+  gid('lc-hard').value = lc.hard;
+  const total = lc.easy + lc.medium + lc.hard;
+  const pct = lc.target > 0 ? Math.min(100, Math.round((total / lc.target) * 100)) : 0;
+  gid('lc-total').textContent = total;
+  gid('lc-target').textContent = lc.target;
+  gid('lc-pct').textContent = pct + '%';
+  gid('lc-fill').style.width = pct + '%';
+}
+
+function saveLeetcode() {
+  state.leetcode.easy   = Math.max(0, parseInt(gid('lc-easy').value) || 0);
+  state.leetcode.medium = Math.max(0, parseInt(gid('lc-medium').value) || 0);
+  state.leetcode.hard   = Math.max(0, parseInt(gid('lc-hard').value) || 0);
+  localStorage.setItem(SK.leetcode, JSON.stringify(state.leetcode));
+  renderLeetcode();
 }
 
 // ══════════════════════════════════════════════
@@ -1778,12 +1877,12 @@ function hasAlert(app) {
 }
 
 function stageRowClass(stage) {
-  const map = { 'Phone Screen':'row-phone', 'Technical':'row-technical', 'Offer':'row-offer', 'Rejected':'row-rejected' };
+  const map = { 'OA':'row-oa', 'Phone Screen':'row-phone', 'Technical':'row-technical', 'Offer':'row-offer', 'Rejected':'row-rejected' };
   return map[stage] || '';
 }
 
 function stageBadgeClass(stage) {
-  const map = { 'Applied':'applied','Phone Screen':'phone','Technical':'technical','Offer':'offer','Rejected':'rejected','Ghosted':'ghosted','Withdrawn':'withdrawn' };
+  const map = { 'Applied':'applied','OA':'oa','Phone Screen':'phone','Technical':'technical','Offer':'offer','Rejected':'rejected','Ghosted':'ghosted','Withdrawn':'withdrawn' };
   return 'badge badge-' + (map[stage] || 'applied');
 }
 
@@ -1804,10 +1903,12 @@ function getFilteredApps() {
 }
 
 function updateAppRowCount(filtered) {
+  const oas    = filtered.filter(a => a.stage === 'OA').length;
   const phones = filtered.filter(a => a.stage === 'Phone Screen').length;
   const tech   = filtered.filter(a => a.stage === 'Technical').length;
   const offers = filtered.filter(a => a.stage === 'Offer').length;
   let parts = [`<span>${filtered.length}</span> application${filtered.length !== 1 ? 's' : ''}`];
+  if (oas)    parts.push(`<span>${oas}</span> OA${oas !== 1 ? 's' : ''}`);
   if (phones) parts.push(`<span>${phones}</span> phone screen${phones !== 1 ? 's' : ''}`);
   if (tech)   parts.push(`<span>${tech}</span> technical`);
   if (offers) parts.push(`<span>${offers}</span> offer${offers !== 1 ? 's' : ''}`);
@@ -1859,8 +1960,9 @@ function renderApps() {
       <td contenteditable="true" data-field="contactName">${esc(app.contactName)}</td>
       <td class="td-url">${liUrl}</td>
       <td class="td-url">${jobUrl}</td>
+      <td contenteditable="true" data-field="salary" style="font-family:var(--font-mono);font-size:11px;color:var(--success);">${esc(app.salary||'')}</td>
       <td contenteditable="true" data-field="followupDate">${esc(app.followupDate)}${alert?'<span class="alert-dot" title="Follow-up overdue">●</span>':''}</td>
-      <td contenteditable="true" data-field="notes" class="td-notes td-wide">${esc(app.notes)}</td>
+      <td contenteditable="true" data-field="notes" class="td-notes td-wide">${esc(app.notes)}${app.stage==='Rejected'&&app.rejectionReason?'<div style="margin-top:4px;font-size:10px;color:var(--danger);opacity:0.8;">Reason: '+esc(app.rejectionReason)+'</div>':''}</td>
       <td class="td-actions"><button class="btn-del" data-action="del-app">×</button></td>
     `;
 
@@ -1898,10 +2000,12 @@ function openAddAppModal(editId = null) {
       <div class="form-row"><div class="form-label">Date Applied</div><input type="date" id="af-date" value="${app?.dateApplied||todayStr()}"></div>
       <div class="form-row"><div class="form-label">Source</div><select id="af-source">${srcOpts}</select></div>
       <div class="form-row"><div class="form-label">Stage</div><select id="af-stage">${stageOpts}</select></div>
+      <div class="form-row"><div class="form-label">Salary Range</div><input type="text" id="af-salary" placeholder="$120k-$150k" value="${esc(app?.salary||'')}"></div>
       <div class="form-row"><div class="form-label">Follow-up Date</div><input type="date" id="af-followup" value="${app?.followupDate||''}"></div>
       <div class="form-row"><div class="form-label">Contact Name</div><input type="text" id="af-contact" value="${esc(app?.contactName||'')}"></div>
       <div class="form-row"><div class="form-label">Contact LinkedIn</div><input type="url" id="af-linkedin" value="${esc(app?.contactLinkedIn||'')}"></div>
       <div class="form-row full"><div class="form-label">Job URL</div><input type="url" id="af-joburl" value="${esc(app?.jobUrl||'')}"></div>
+      <div class="form-row full"><div class="form-label">Rejection Reason</div><input type="text" id="af-rejection" placeholder="e.g. Failed technical, no response, position filled…" value="${esc(app?.rejectionReason||'')}"></div>
       <div class="form-row full"><div class="form-label">Notes</div><textarea id="af-notes">${esc(app?.notes||'')}</textarea></div>
     </div>
   `, () => {
@@ -1913,10 +2017,12 @@ function openAddAppModal(editId = null) {
       dateApplied:      gid('af-date').value,
       source:           gid('af-source').value,
       stage:            gid('af-stage').value,
+      salary:           gid('af-salary').value.trim(),
       followupDate:     gid('af-followup').value,
       contactName:      gid('af-contact').value.trim(),
       contactLinkedIn:  gid('af-linkedin').value.trim(),
       jobUrl:           gid('af-joburl').value.trim(),
+      rejectionReason:  gid('af-rejection').value.trim(),
       notes:            gid('af-notes').value.trim(),
     };
     if (app) {
@@ -2474,11 +2580,11 @@ function renderMetrics() {
   });
 
   // Stage funnel
-  const funnelStages = ['Applied','Phone Screen','Technical','Offer'];
+  const funnelStages = ['Applied','OA','Phone Screen','Technical','Offer'];
   const funnelCounts = funnelStages.map(s => state.applications.filter(a => a.stage===s).length);
   chartInstances.funnel = new Chart(gid('chart-funnel'), {
     type: 'bar',
-    data: { labels: funnelStages, datasets: [{ label:'Count', data: funnelCounts, backgroundColor:['rgba(68,153,255,0.6)','rgba(255,187,51,0.6)','rgba(170,119,255,0.6)','rgba(0,255,65,0.6)'], borderColor:['#4499ff','#ffbb33','#aa77ff','#00ff41'], borderWidth:1 }] },
+    data: { labels: funnelStages, datasets: [{ label:'Count', data: funnelCounts, backgroundColor:['rgba(68,153,255,0.6)','rgba(255,165,0,0.6)','rgba(255,187,51,0.6)','rgba(170,119,255,0.6)','rgba(0,255,65,0.6)'], borderColor:['#4499ff','#ffa500','#ffbb33','#aa77ff','#00ff41'], borderWidth:1 }] },
     options: { ...opts(), indexAxis:'y' }
   });
 
@@ -2834,6 +2940,11 @@ function init() {
   // Tailor API key & resume pre-fill
   if (state.apiKey) gid('tailor-api-key').value = state.apiKey;
   gid('resume-editor').value = state.resume;
+
+  // Leetcode inputs
+  ['lc-easy','lc-medium','lc-hard'].forEach(id => {
+    gid(id).addEventListener('change', saveLeetcode);
+  });
 
   // Initial renders
   renderDashboard();
